@@ -91,7 +91,11 @@ async function executeScript(script: TScript, path: string[]): Promise<void> {
   }
 }
 
-async function spawnScript(script: string, path: string[]): Promise<void> {
+async function spawnScript(script: string, path: string[], includeArgs: boolean = true): Promise<void> {
+  if (includeArgs) {
+    script += " " + argv["--"].join(" ");
+  }
+  
   return new Promise((resolve, reject) => {
     console.log(`> ${script} \x1b[90m(${path.join(".")})\x1b[0m`);
     const s = child_process.exec(script);

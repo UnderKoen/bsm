@@ -15,5 +15,9 @@ module.exports = {
       _win32: "echo Windows",
       _default: `echo Not Windows`,
     },
+    args: {
+      _default: "bsm args.* --",
+      echo: "echo",
+    }
   },
 };
