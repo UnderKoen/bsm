@@ -11,5 +11,9 @@ module.exports = {
       eslint: "eslint .",
       prettier: "prettier --check .",
     },
+    os: {
+      _win32: "echo Windows",
+      _default: `echo Not Windows`,
+    },
   },
 };

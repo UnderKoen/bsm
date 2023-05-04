@@ -25,6 +25,7 @@
     "watch": "npm run build -- --watch"
   },
   "dependencies": {
+    "@types/minimist": "^1.2.2",
     "minimist": "^1.2.8"
   },
   "devDependencies": {
@@ -38,5 +39,8 @@
     "prettier-package-json": "^2.8.0",
     "typescript": "^5.0.4"
   },
-  "keywords": ["script", "scripting"]
+  "keywords": [
+    "script",
+    "scripting"
+  ]
 }

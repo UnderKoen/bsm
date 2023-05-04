@@ -61,6 +61,13 @@ async function runScript(
   );
 }
 
+const specialFunctions: {
+  [key: string]: (script: TScripts, path: string[]) => Promise<void>;
+} = {
+  [`_${process.platform}`]: (script, path) => executeScript(script[`_${process.platform}`], [...path, `_${process.platform}`]),
+  _default: (script, path) => executeScript(script["_default"], path),
+};
+
 async function executeScript(script: TScript, path: string[]): Promise<void> {
   switch (typeof script) {
     case "string":
@@ -73,8 +80,12 @@ async function executeScript(script: TScript, path: string[]): Promise<void> {
           await executeScript(script[i], [...path, i.toString()]);
         }
       } else {
-        if (Object.hasOwn(script, "_default"))
-          await executeScript(script._default, path);
+        for (let special in specialFunctions) {
+          if (Object.hasOwn(script, special)) {
+            await specialFunctions[special](script, path);
+            return;
+          }
+        }
       }
       return;
   }
@@ -112,5 +123,6 @@ async function main() {
 }
 
 main().catch(() => {
+  //TODO return correct code
   process.exit(1);
 });
