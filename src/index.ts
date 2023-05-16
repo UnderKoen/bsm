@@ -24,6 +24,7 @@ async function runScript(
   path: string[] = []
 ): Promise<void> {
   if (script === "") {
+    //TODO remove call here, or should call run script inside execute script
     await executeScript(context, path);
     return;
   } else if (typeof context === "object") {
@@ -61,17 +62,6 @@ async function runScript(
   );
 }
 
-const specialFunctions: {
-  [key: string]: (script: TScripts, path: string[]) => Promise<void>;
-} = {
-  [`_${process.platform}`]: (script, path) =>
-    executeScript(script[`_${process.platform}`], [
-      ...path,
-      `_${process.platform}`,
-    ]),
-  _default: (script, path) => executeScript(script["_default"], path),
-};
-
 async function executeScript(script: TScript, path: string[]): Promise<void> {
   switch (typeof script) {
     case "string":
@@ -84,12 +74,21 @@ async function executeScript(script: TScript, path: string[]): Promise<void> {
           await executeScript(script[i], [...path, i.toString()]);
         }
       } else {
-        for (let special in specialFunctions) {
-          if (Object.hasOwn(script, special)) {
-            await specialFunctions[special](script, path);
-            return;
+        const executeIfExists = async (name: string, addToPath: boolean = true): Promise<boolean> => {
+          if (Object.hasOwn(script, name)) {
+            await executeScript(script[name], addToPath ? [...path, name] : path);
+            return true;
           }
+          return false;
         }
+
+        await executeIfExists("_pre");
+
+        if (await executeIfExists(`_${process.platform}`)) { /* empty */
+        } else if (await executeIfExists("_default", false)) { /* empty */
+        }
+
+        await executeIfExists("_post");
       }
       return;
   }
