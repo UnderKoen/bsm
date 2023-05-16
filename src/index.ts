@@ -1,6 +1,6 @@
 #! /usr/bin/env node
 
-const argv = require("minimist")(process.argv.slice(2), { "--": true });
+const argv = require("minimist")(process.argv.slice(2), {"--": true});
 const path = require("path");
 
 interface TConfig {
@@ -64,7 +64,11 @@ async function runScript(
 const specialFunctions: {
   [key: string]: (script: TScripts, path: string[]) => Promise<void>;
 } = {
-  [`_${process.platform}`]: (script, path) => executeScript(script[`_${process.platform}`], [...path, `_${process.platform}`]),
+  [`_${process.platform}`]: (script, path) =>
+    executeScript(script[`_${process.platform}`], [
+      ...path,
+      `_${process.platform}`,
+    ]),
   _default: (script, path) => executeScript(script["_default"], path),
 };
 
@@ -91,24 +95,18 @@ async function executeScript(script: TScript, path: string[]): Promise<void> {
   }
 }
 
-async function spawnScript(script: string, path: string[], includeArgs: boolean = true): Promise<void> {
+async function spawnScript(
+  script: string,
+  path: string[],
+  includeArgs: boolean = true
+): Promise<void> {
   if (includeArgs) {
     script += " " + argv["--"].join(" ");
   }
-  
+
   return new Promise((resolve, reject) => {
     console.log(`> ${script} \x1b[90m(${path.join(".")})\x1b[0m`);
-    const s = child_process.exec(script);
-
-    s.stdout.on("data", (data: string) => {
-      console.log(data.toString().replace(/\n$/, ""));
-    });
-
-    s.stderr.on("data", (data: string) => {
-      console.error(data.toString().replace(/\n$/, ""));
-    });
-
-    process.stdin.pipe(s.stdin);
+    const s = child_process.spawn(script, [], {stdio: "inherit", shell: true});
 
     s.on("close", (code: number) => {
       if (code === 0) {

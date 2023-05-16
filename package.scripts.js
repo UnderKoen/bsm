@@ -13,11 +13,17 @@ module.exports = {
     },
     os: {
       _win32: "echo Windows",
-      _default: `echo Not Windows`,
+      _default: "echo Not Windows",
     },
     args: {
       _default: "bsm args.* --",
       echo: "echo",
-    }
+    },
+    error: ["echo test", "exit 1"],
+    hooks: {
+      _pre: "echo pre",
+      _default: "bsm error || echo error",
+      _post: "echo post",
+    },
   },
 };
