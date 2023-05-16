@@ -112,7 +112,8 @@ async function spawnScript(
       if (code === 0) {
         resolve();
       } else {
-        reject();
+        console.error(`\x1b[31mScript failed with code ${code}\x1b[0m \x1b[90m(${path.join(".")})\x1b[0m`)
+        reject(code);
       }
     });
   });
