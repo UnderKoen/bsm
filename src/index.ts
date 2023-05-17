@@ -59,7 +59,8 @@ async function runScript(
   includeArgs: boolean = true
 ): Promise<void> {
   try {
-    await executeIfExists(context, ["_pre"], path, true, false);
+    //TODO don't execute when command is not found
+    await executeIfExists(context, ["_pre"], path, false, true);
 
     const rest = script.slice(1);
 
@@ -74,20 +75,18 @@ async function runScript(
       console.error(
         `\x1b[31mScript '${[...path, ...script].join(".")}' not found\x1b[0m`
       );
-      throw 127;
+      return process.exit(127);
     }
 
-    await executeIfExists(context, ["_post"], path, true, false);
-  } catch (e) {
-    //prevent infinite loops
-    if (process.env.BSM_PATH?.endsWith("_catch")) throw e;
-
-    process.env.BSM_ERROR = e?.toString();
-    if (await executeIfExists(context, ["_catch"], path, true, false)) {
-      return;
+    await executeIfExists(context, ["_post"], path, false, true);
+  } catch (e: any) {
+    process.env.BSM_ERROR = e?.code?.toString();
+    await executeIfExists(context, ["_onError"], path, false, true);
+    if (!(await executeIfExists(context, ["_catch"], path, false))) {
+      throw e;
     }
-
-    throw e;
+  } finally {
+    await executeIfExists(context, ["_finally"], path, false, true);
   }
 }
 
@@ -112,21 +111,21 @@ async function executeIfExists(
   script: TScript,
   name: string[],
   path: string[],
-  addToPath: boolean = true,
-  includeArgs: boolean = true
+  includeArgs: boolean = true,
+  preventLoop: boolean = false
 ): Promise<boolean> {
+  if (preventLoop && process.env.BSM_SCRIPT === [...path, ...name].join("."))
+    return false;
   const sub = name[0];
 
   if (typeof script !== "object") return false;
   if (!Object.hasOwn(script, sub)) return false;
 
-  if (addToPath) path = [...path, sub];
-
   if (Array.isArray(script)) {
     const i = parseInt(sub);
-    await runScript(script[i], name.slice(1), path, includeArgs);
+    await runScript(script[i], name.slice(1), [...path, sub], includeArgs);
   } else {
-    await runScript(script[sub], name.slice(1), path, includeArgs);
+    await runScript(script[sub], name.slice(1), [...path, sub], includeArgs);
   }
 
   return true;
@@ -163,7 +162,7 @@ async function spawnScript(
   path: string[],
   includeArgs: boolean
 ): Promise<void> {
-  if (includeArgs) {
+  if (includeArgs && argv["--"].length) {
     script += " " + argv["--"].join(" ");
   }
 
@@ -178,6 +177,7 @@ async function spawnScript(
       env: {
         ...process.env,
         BSM_PATH: path.slice(0, -1).join("."),
+        BSM_SCRIPT: path.join("."),
       },
     });
 
@@ -185,18 +185,18 @@ async function spawnScript(
       if (code === 0) {
         resolve();
       } else {
-        console.error(
-          `\x1b[31mScript failed with code ${code}\x1b[0m \x1b[90m(${path.join(
-            "."
-          )})\x1b[0m`
-        );
-        reject(code);
+        reject({
+          code: code,
+          script: path.join("."),
+        });
       }
     });
   });
 }
 
 main().catch((c) => {
-  if (typeof c !== "number") c = 1;
-  process.exit(c);
+  console.error(
+    `\x1b[31mScript failed with code ${c.code}\x1b[0m \x1b[90m(${c.script})\x1b[0m`
+  );
+  process.exit(c.code);
 });

@@ -54,9 +54,28 @@ module.exports = {
         array: ["echo $BSM_PATH", "echo %BSM_PATH%"],
       },
       error: {
-        _default: "exit 2",
-        _catch: "bsm ~.echo",
-        echo: "echo %BSM_ERROR%",
+        onError: {
+          _default: "exit 4",
+          _onError: "echo onError",
+        },
+        catch: {
+          _default: "exit 4",
+          _catch: "echo catch",
+        },
+        finally: {
+          _default: "exit 4",
+          normal: "exit 0",
+          _finally: "echo finally",
+        },
+        all: {
+          _default: "exit 4",
+          normal: "exit 0",
+          _post: "echo post",
+          _onError: "echo onError",
+          _catch: "exit 3",
+          _finally: "echo finally",
+        },
+        _catch: "echo %BSM_ERROR%",
       },
     },
   },
