@@ -21,7 +21,10 @@ const child_process = require("node:child_process");
 const scripts = config.scripts;
 
 async function main() {
-  for (const script of argv._) {
+  for (let script of argv._) {
+    if (process.env.BSM_PATH)
+      script = script.replace(/^~/g, process.env.BSM_PATH);
+
     await runScript(scripts, script.split("."));
   }
 }
@@ -29,14 +32,15 @@ async function main() {
 async function runScript(
   context: TScript,
   script: string[],
-  path: string[] = []
+  path: string[] = [],
+  includeArgs: boolean = true
 ): Promise<void> {
-  await executeIfExists(context, ["_pre"], path);
+  await executeIfExists(context, ["_pre"], path, true, false);
 
   const rest = script.slice(1);
 
   if (script.length === 0) {
-    await executeScript(context, path);
+    await executeScript(context, path, includeArgs);
   } else if (script[0] === "*") {
     await executeAll(context, rest, path);
   } else if (await executeIfExists(context, script, path)) {
@@ -49,7 +53,7 @@ async function runScript(
     throw 127;
   }
 
-  await executeIfExists(context, ["_post"], path);
+  await executeIfExists(context, ["_post"], path, true, false);
 }
 
 async function executeAll(context: TScript, rest: string[], path: string[]) {
@@ -73,7 +77,8 @@ async function executeIfExists(
   script: TScript,
   name: string[],
   path: string[],
-  addToPath: boolean = true
+  addToPath: boolean = true,
+  includeArgs: boolean = true
 ): Promise<boolean> {
   const sub = name[0];
 
@@ -84,19 +89,23 @@ async function executeIfExists(
 
   if (Array.isArray(script)) {
     const i = parseInt(sub);
-    await runScript(script[i], name.slice(1), path);
+    await runScript(script[i], name.slice(1), path, includeArgs);
   } else {
-    await runScript(script[sub], name.slice(1), path);
+    await runScript(script[sub], name.slice(1), path, includeArgs);
   }
 
   return true;
 }
 
-async function executeScript(script: TScript, path: string[]): Promise<void> {
+async function executeScript(
+  script: TScript,
+  path: string[],
+  includeArgs: boolean
+): Promise<void> {
   switch (typeof script) {
     case "string":
       //TODO optimise for running bsm again
-      await spawnScript(script, path);
+      await spawnScript(script, path, includeArgs);
       return;
     case "object":
       if (Array.isArray(script)) {
@@ -117,7 +126,7 @@ async function executeScript(script: TScript, path: string[]): Promise<void> {
 async function spawnScript(
   script: string,
   path: string[],
-  includeArgs: boolean = true
+  includeArgs: boolean
 ): Promise<void> {
   if (includeArgs) {
     script += " " + argv["--"].join(" ");
@@ -128,6 +137,10 @@ async function spawnScript(
     const s = child_process.spawn(script, [], {
       stdio: "inherit",
       shell: true,
+      env: {
+        ...process.env,
+        BSM_PATH: path.join("."),
+      },
     });
 
     s.on("close", (code: number) => {
