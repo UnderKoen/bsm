@@ -187,23 +187,13 @@ async function executeFunction(
   rest: string[],
   path: string[]
 ): Promise<TScript> {
-  if (config?.config?.allowFunction) {
-    //warn that this is executing a function
-    console.warn(
-      `\x1b[33mExecuting function '${[...path, ...rest].join(
-        "."
-      )}' disable 'allowFunction' in config to disable\x1b[0m`
-    );
-    const result = await fn.call(null, argv["--"]);
-    return result ?? {};
-  } else {
-    console.error(
-      `\x1b[31mCannot execute function '${[...path, ...rest].join(
-        "."
-      )}' enable 'allowFunction' in config to allow\x1b[0m`
-    );
-    throw { code: 1, script: [...path, ...rest].join(".") };
-  }
+  console.log(
+    `> \x1b[93mExecuting JavaScript function\x1b[0m \x1b[90m(${[...path].join(
+      "."
+    )})\x1b[0m`
+  );
+  const result = await fn.call(null, argv["--"]);
+  return result ?? {};
 }
 
 async function executeIfExists(

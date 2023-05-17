@@ -68,11 +68,8 @@ module.exports = {
       },
       function: (argv) => {
         console.log(`wow cool function bro ${argv}`);
-        return "echo function";
+        return "echo evil";
       },
     },
-  },
-  config: {
-    allowFunction: true,
   },
 };
