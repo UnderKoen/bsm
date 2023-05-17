@@ -34,6 +34,11 @@ module.exports = {
           _default: "echo test",
         },
         _post: "echo post",
+        error: {
+          _default: "echo error",
+          _post: "bsm ~.unknown",
+          _catch: "",
+        },
       },
       relative: {
         _default: "bsm ~.test",

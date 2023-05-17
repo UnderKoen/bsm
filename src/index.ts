@@ -21,11 +21,33 @@ const child_process = require("node:child_process");
 const scripts = config.scripts;
 
 async function main() {
-  for (let script of argv._) {
-    if (process.env.BSM_PATH)
-      script = script.replace(/^~/g, process.env.BSM_PATH);
+  for (const script of argv._) {
+    if (script.startsWith("~") && process.env.BSM_PATH) {
+      const sub = getScript(scripts, process.env.BSM_PATH.split("."));
+
+      if (sub) {
+        await runScript(sub, script.split(".").splice(1));
+        continue;
+      }
+    }
 
     await runScript(scripts, script.split("."));
+  }
+}
+
+function getScript(scripts: TScript, name: string[]): TScript | undefined {
+  if (name.length === 0) return scripts;
+
+  const sub = name[0];
+
+  if (typeof scripts !== "object") return undefined;
+  if (!Object.hasOwn(scripts, sub)) return undefined;
+
+  if (Array.isArray(scripts)) {
+    const i = parseInt(sub);
+    return getScript(scripts[i], name.slice(1));
+  } else {
+    return getScript(scripts[sub], name.slice(1));
   }
 }
 
