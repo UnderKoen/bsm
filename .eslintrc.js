@@ -13,6 +13,9 @@ module.exports = {
         project: "./tsconfig.json",
       },
       extends: ["plugin:@typescript-eslint/strict"],
+      rules: {
+        "@typescript-eslint/no-throw-literal": "off",
+      },
     },
   ],
   parser: "@typescript-eslint/parser",

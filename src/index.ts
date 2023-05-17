@@ -20,6 +20,12 @@ const child_process = require("node:child_process");
 
 const scripts = config.scripts;
 
+async function main() {
+  for (const script of argv._) {
+    await runScript(scripts, script.split("."));
+  }
+}
+
 async function runScript(
   context: TScript,
   script: string[],
@@ -32,20 +38,7 @@ async function runScript(
   if (script.length === 0) {
     await executeScript(context, path);
   } else if (script[0] === "*") {
-    if (typeof context === "string") {
-      await runScript(context, rest, path);
-    } else if (Array.isArray(context)) {
-      for (let i = 0; i < context.length; i++) {
-        await runScript(context[i], rest, [...path, i.toString()]);
-      }
-    } else {
-      for (const key in context) {
-        if (key.startsWith("_")) continue;
-        if (Object.hasOwn(context, key)) {
-          await runScript(context[key], rest, [...path, key]);
-        }
-      }
-    }
+    await executeAll(context, rest, path);
   } else if (await executeIfExists(context, script, path)) {
     // already executed
   } else {
@@ -57,6 +50,23 @@ async function runScript(
   }
 
   await executeIfExists(context, ["_post"], path);
+}
+
+async function executeAll(context: TScript, rest: string[], path: string[]) {
+  if (typeof context === "string") {
+    await runScript(context, rest, path);
+  } else if (Array.isArray(context)) {
+    for (let i = 0; i < context.length; i++) {
+      await runScript(context[i], rest, [...path, i.toString()]);
+    }
+  } else {
+    for (const key in context) {
+      if (key.startsWith("_")) continue;
+      if (Object.hasOwn(context, key)) {
+        await runScript(context[key], rest, [...path, key]);
+      }
+    }
+  }
 }
 
 async function executeIfExists(
@@ -133,12 +143,6 @@ async function spawnScript(
       }
     });
   });
-}
-
-async function main() {
-  for (const script of argv._) {
-    await runScript(scripts, script.split("."));
-  }
 }
 
 main().catch((c) => {
