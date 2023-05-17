@@ -20,13 +20,25 @@ interface TScripts {
 
 type TScript = string | TScript[] | TScripts;
 
-const possibleConfigFiles: string[] = ["./package.scripts.js", "./package.scripts.json"];
-const scripts = possibleConfigFiles.reduce<TConfig | undefined>(
-  (p, c) => p ?? loadConfig(c),
-  undefined
-);
+const possibleConfigFiles: string[] = argv.config
+  ? [argv.config]
+  : [process.env.BSM_CONFIG, "./package.scripts.js", "./package.scripts.json"];
+
+const { config, file } =
+  possibleConfigFiles.reduce<{ config: TConfig; file: string } | undefined>(
+    (p, c) => {
+      if (p) return p;
+      const config = loadConfig(c);
+      if (config) return { config, file: c };
+      return undefined;
+    },
+    undefined
+  ) ?? {};
+
+process.env.BSM_CONFIG = file;
 
 function loadConfig(p: string): TConfig | undefined {
+  if (!p) return undefined;
   try {
     p = require.resolve(p, {
       paths: [process.cwd()],
@@ -57,9 +69,11 @@ function loadConfig(p: string): TConfig | undefined {
 }
 
 async function main() {
-  if (!scripts) {
+  if (!config) {
     console.error(
-      "\x1b[31mCannot find config './package.scripts.js' or './package.scripts.json'\x1b[0m"
+      `\x1b[31mCannot find config ${possibleConfigFiles
+        .map((s) => `'${s}'`)
+        .join(" or ")}\x1b[0m`
     );
     process.exit(1);
   }
@@ -67,7 +81,7 @@ async function main() {
   for (const script of argv._) {
     if (script.startsWith("~") && process.env.BSM_PATH) {
       const prefix = process.env.BSM_PATH.split(".");
-      const sub = getScript(scripts.scripts, prefix);
+      const sub = getScript(config.scripts, prefix);
 
       if (sub) {
         await runScript(sub, script.split(".").splice(1), prefix);
@@ -75,7 +89,7 @@ async function main() {
       }
     }
 
-    await runScript(scripts.scripts, script.split("."));
+    await runScript(config.scripts, script.split("."));
   }
 }
 
