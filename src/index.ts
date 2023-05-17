@@ -250,6 +250,11 @@ async function executeScript(
           /* empty */
         } else if (await executeIfExists(script, ["_default"], path)) {
           /* empty */
+        } else {
+          console.error(
+            `\x1b[31mScript '${[...path].join(".")}' is not executable\x1b[0m`
+          );
+          return process.exit(127);
         }
       }
       return;
