@@ -22,20 +22,18 @@ const scripts = config.scripts;
 
 async function runScript(
   context: TScript,
-  //TODO make this an array to prevent many string splitting
-  script: string,
+  script: string[],
   path: string[] = []
 ): Promise<void> {
   await executeIfExists(context, "_pre", path);
 
   //TODO make these not return but continue
-  if (script === "") {
+  if (script.length === 0) {
     await executeScript(context, path);
     return;
   } else if (typeof context === "object") {
-    const sub = script.split(".", 2)[0];
-    //TODO use slice instead of substring
-    const rest = script.substring(sub.length + 1);
+    const sub = script[0];
+    const rest = script.slice(1);
 
     //TODO make this a function
     if (sub === "*") {
@@ -81,7 +79,7 @@ async function executeIfExists(
   if (typeof script !== "object" || Array.isArray(script)) return false;
 
   if (Object.hasOwn(script, name)) {
-    await runScript(script[name], "", addToPath ? [...path, name] : path);
+    await runScript(script[name], [], addToPath ? [...path, name] : path);
     return true;
   }
 
@@ -97,7 +95,7 @@ async function executeScript(script: TScript, path: string[]): Promise<void> {
     case "object":
       if (Array.isArray(script)) {
         for (let i = 0; i < script.length; i++) {
-          await runScript(script[i], "", [...path, i.toString()]);
+          await runScript(script[i], [], [...path, i.toString()]);
         }
       } else {
         if (await executeIfExists(script, `_${process.platform}`, path)) {
@@ -143,7 +141,7 @@ async function spawnScript(
 
 async function main() {
   for (const script of argv._) {
-    await runScript(scripts, script);
+    await runScript(scripts, script.split("."));
   }
 }
 
