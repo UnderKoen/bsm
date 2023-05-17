@@ -1,9 +1,14 @@
 #! /usr/bin/env node
 
-const argv = require("minimist")(process.argv.slice(2), { "--": true });
-const path = require("path");
+import minimist from "minimist";
+import { defu } from "defu";
+
+import child_process from "node:child_process";
+
+const argv = minimist(process.argv.slice(2), { "--": true });
 
 interface TConfig {
+  extends?: string[];
   scripts: TScripts;
 }
 
@@ -15,16 +20,50 @@ interface TScripts {
 
 type TScript = string | TScript[] | TScripts;
 
-const config: TConfig = require(path.join(process.cwd(), "package.scripts.js"));
-const child_process = require("node:child_process");
+const scripts = loadConfig("./package.scripts.js");
 
-const scripts = config.scripts;
+function loadConfig(p: string): TConfig | undefined {
+  try {
+    p = require.resolve(p, {
+      paths: [process.cwd()],
+    });
+    const source: TConfig = require(p);
+
+    const defaults = { scripts: {} };
+
+    if (Object.hasOwn(source, "extends") && source.extends) {
+      const configs = [];
+      for (const config of source.extends) {
+        const c = loadConfig(config);
+        if (!c) {
+          console.error(
+            `\x1b[31mCannot find config '${config}' to extend\x1b[0m`
+          );
+          process.exit(1);
+        } else configs.push(c);
+      }
+
+      return defu(source, ...configs, defaults);
+    } else {
+      return defu(source, defaults);
+    }
+  } catch (e) {
+    return undefined;
+  }
+}
 
 async function main() {
+  if (!scripts) {
+    console.error(
+      "\x1b[31mCannot find config './package.scripts.js' or './package.scripts.json'\x1b[0m"
+    );
+    process.exit(1);
+  }
+
   for (const script of argv._) {
     if (script.startsWith("~") && process.env.BSM_PATH) {
       const prefix = process.env.BSM_PATH.split(".");
-      const sub = getScript(scripts, prefix);
+      const sub = getScript(scripts.scripts, prefix);
 
       if (sub) {
         await runScript(sub, script.split(".").splice(1), prefix);
@@ -32,7 +71,7 @@ async function main() {
       }
     }
 
-    await runScript(scripts, script.split("."));
+    await runScript(scripts.scripts, script.split("."));
   }
 }
 
@@ -162,7 +201,7 @@ async function spawnScript(
   path: string[],
   includeArgs: boolean
 ): Promise<void> {
-  if (includeArgs && argv["--"].length) {
+  if (includeArgs && argv["--"]?.length) {
     script += " " + argv["--"].join(" ");
   }
 
