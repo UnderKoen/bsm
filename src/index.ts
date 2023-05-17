@@ -35,25 +35,37 @@ async function runScript(
   path: string[] = [],
   includeArgs: boolean = true
 ): Promise<void> {
-  await executeIfExists(context, ["_pre"], path, true, false);
+  try {
+    await executeIfExists(context, ["_pre"], path, true, false);
 
-  const rest = script.slice(1);
+    const rest = script.slice(1);
 
-  if (script.length === 0) {
-    await executeScript(context, path, includeArgs);
-  } else if (script[0] === "*") {
-    await executeAll(context, rest, path);
-  } else if (await executeIfExists(context, script, path)) {
-    // already executed
-  } else {
-    //TODO improve error message
-    console.error(
-      `\x1b[31mScript '${[...path, ...script].join(".")}' not found\x1b[0m`
-    );
-    throw 127;
+    if (script.length === 0) {
+      await executeScript(context, path, includeArgs);
+    } else if (script[0] === "*") {
+      await executeAll(context, rest, path);
+    } else if (await executeIfExists(context, script, path)) {
+      // already executed
+    } else {
+      //TODO improve error message
+      console.error(
+        `\x1b[31mScript '${[...path, ...script].join(".")}' not found\x1b[0m`
+      );
+      throw 127;
+    }
+
+    await executeIfExists(context, ["_post"], path, true, false);
+  } catch (e) {
+    //prevent infinite loops
+    if (process.env.BSM_PATH?.endsWith("_catch")) throw e;
+
+    process.env.BSM_ERROR = e?.toString();
+    if (await executeIfExists(context, ["_catch"], path, true, false)) {
+      return;
+    }
+
+    throw e;
   }
-
-  await executeIfExists(context, ["_post"], path, true, false);
 }
 
 async function executeAll(context: TScript, rest: string[], path: string[]) {
@@ -115,7 +127,7 @@ async function executeScript(
       } else {
         if (await executeIfExists(script, [`_${process.platform}`], path)) {
           /* empty */
-        } else if (await executeIfExists(script, ["_default"], path, false)) {
+        } else if (await executeIfExists(script, ["_default"], path)) {
           /* empty */
         }
       }
@@ -139,7 +151,7 @@ async function spawnScript(
       shell: true,
       env: {
         ...process.env,
-        BSM_PATH: path.join("."),
+        BSM_PATH: path.slice(0, -1).join("."),
       },
     });
 

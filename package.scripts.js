@@ -40,10 +40,19 @@ module.exports = {
         test: "echo test",
         echo: {
           _default: "bsm ~._",
-          _: "echo %BSM_PATH%",
+          _: {
+            _linux: "echo $BSM_PATH",
+            _win32: "echo %BSM_PATH%",
+            _default: `echo ${process.env.BSM_PATH}`,
+          },
         },
+        array: ["echo $BSM_PATH", "echo %BSM_PATH%"],
       },
-      error: "exit 2",
+      error: {
+        _default: "exit 2",
+        _catch: "bsm ~.echo",
+        echo: "echo %BSM_ERROR%",
+      },
     },
   },
 };
