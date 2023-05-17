@@ -23,10 +23,11 @@ const scripts = config.scripts;
 async function main() {
   for (const script of argv._) {
     if (script.startsWith("~") && process.env.BSM_PATH) {
-      const sub = getScript(scripts, process.env.BSM_PATH.split("."));
+      const prefix = process.env.BSM_PATH.split(".");
+      const sub = getScript(scripts, prefix);
 
       if (sub) {
-        await runScript(sub, script.split(".").splice(1));
+        await runScript(sub, script.split(".").splice(1), prefix);
         continue;
       }
     }
@@ -168,6 +169,9 @@ async function spawnScript(
 
   return new Promise((resolve, reject) => {
     console.log(`> ${script} \x1b[90m(${path.join(".")})\x1b[0m`);
+
+    if (script === "") return resolve();
+
     const s = child_process.spawn(script, [], {
       stdio: "inherit",
       shell: true,
