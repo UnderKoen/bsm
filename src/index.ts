@@ -20,7 +20,11 @@ interface TScripts {
 
 type TScript = string | TScript[] | TScripts;
 
-const scripts = loadConfig("./package.scripts.js");
+const possibleConfigFiles: string[] = ["./package.scripts.js", "./package.scripts.json"];
+const scripts = possibleConfigFiles.reduce<TConfig | undefined>(
+  (p, c) => p ?? loadConfig(c),
+  undefined
+);
 
 function loadConfig(p: string): TConfig | undefined {
   try {
