@@ -1,6 +1,6 @@
 #! /usr/bin/env node
 
-const argv = require("minimist")(process.argv.slice(2), {"--": true});
+const argv = require("minimist")(process.argv.slice(2), { "--": true });
 const path = require("path");
 
 interface TConfig {
@@ -25,65 +25,61 @@ async function runScript(
   script: string[],
   path: string[] = []
 ): Promise<void> {
-  await executeIfExists(context, "_pre", path);
+  await executeIfExists(context, ["_pre"], path);
 
-  //TODO make these not return but continue
+  const rest = script.slice(1);
+
   if (script.length === 0) {
     await executeScript(context, path);
-    return;
-  } else if (typeof context === "object") {
-    const sub = script[0];
-    const rest = script.slice(1);
-
-    //TODO make this a function
-    if (sub === "*") {
-      if (Array.isArray(context)) {
-        for (let i = 0; i < context.length; i++) {
-          await runScript(context[i], rest, [...path, i.toString()]);
-        }
-      } else {
-        for (const key in context) {
-          if (key.startsWith("_")) continue;
-          if (Object.hasOwn(context, key)) {
-            await runScript(context[key], rest, [...path, key]);
-          }
+  } else if (script[0] === "*") {
+    if (typeof context === "string") {
+      await runScript(context, rest, path);
+    } else if (Array.isArray(context)) {
+      for (let i = 0; i < context.length; i++) {
+        await runScript(context[i], rest, [...path, i.toString()]);
+      }
+    } else {
+      for (const key in context) {
+        if (key.startsWith("_")) continue;
+        if (Object.hasOwn(context, key)) {
+          await runScript(context[key], rest, [...path, key]);
         }
       }
-      return;
     }
-
-    if (Array.isArray(context)) {
-      const i = parseInt(sub);
-      if (!isNaN(i) && context[i])
-        return await runScript(context[i], rest, [...path, sub]);
-    } else if (Object.hasOwn(context, sub)) {
-      return await runScript(context[sub], rest, [...path, sub]);
-    }
+  } else if (await executeIfExists(context, script, path)) {
+    // already executed
+  } else {
+    //TODO improve error message
+    console.error(
+      `\x1b[31mScript '${[...path, ...script].join(".")}' not found\x1b[0m`
+    );
+    throw 127;
   }
-  
-  await executeIfExists(context, "_post", path);
 
-  //TODO improve error message
-  console.error(
-    `\x1b[31mScript '${path.map(s => `${s}.`).join("")}${script}' not found\x1b[0m`
-  );
-  return process.exit(1);
+  await executeIfExists(context, ["_post"], path);
 }
 
 async function executeIfExists(
   script: TScript,
-  name: string,
+  name: string[],
   path: string[],
   addToPath: boolean = true
 ): Promise<boolean> {
-  if (typeof script !== "object" || Array.isArray(script)) return false;
+  const sub = name[0];
 
-  if (Object.hasOwn(script, name)) {
-    await runScript(script[name], [], addToPath ? [...path, name] : path);
-    return true;
+  if (typeof script !== "object") return false;
+  if (!Object.hasOwn(script, sub)) return false;
+
+  if (addToPath) path = [...path, sub];
+
+  if (Array.isArray(script)) {
+    const i = parseInt(sub);
+    await runScript(script[i], name.slice(1), path);
+  } else {
+    await runScript(script[sub], name.slice(1), path);
   }
 
-  return false;
+  return true;
 }
 
 async function executeScript(script: TScript, path: string[]): Promise<void> {
@@ -98,9 +94,9 @@ async function executeScript(script: TScript, path: string[]): Promise<void> {
           await runScript(script[i], [], [...path, i.toString()]);
         }
       } else {
-        if (await executeIfExists(script, `_${process.platform}`, path)) {
+        if (await executeIfExists(script, [`_${process.platform}`], path)) {
           /* empty */
-        } else if (await executeIfExists(script, "_default", path, false)) {
+        } else if (await executeIfExists(script, ["_default"], path, false)) {
           /* empty */
         }
       }
