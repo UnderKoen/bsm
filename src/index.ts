@@ -147,7 +147,7 @@ async function main() {
   }
 }
 
-main().catch(() => {
-  //TODO return correct code
-  process.exit(1);
+main().catch((c) => {
+  if (typeof c !== "number") c = 1;
+  process.exit(c);
 });
