@@ -66,6 +66,13 @@ module.exports = {
         },
         _catch: "echo %BSM_ERROR%",
       },
+      function: (argv) => {
+        console.log(`wow cool function bro ${argv}`);
+        return "echo function";
+      },
     },
+  },
+  config: {
+    allowFunction: true,
   },
 };

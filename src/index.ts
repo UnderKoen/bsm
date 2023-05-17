@@ -10,6 +10,9 @@ const argv = minimist(process.argv.slice(2), { "--": true });
 interface TConfig {
   extends?: string[];
   scripts: TScripts;
+  config?: {
+    allowFunction?: boolean;
+  };
 }
 
 // a record can't be used here because it doesn't allow for circular references
@@ -18,7 +21,7 @@ interface TScripts {
   [key: string]: TScript;
 }
 
-type TScript = string | TScript[] | TScripts;
+type TScript = string | TScript[] | TScripts | Function;
 
 const possibleConfigFiles: string[] = argv.config
   ? [argv.config]
@@ -37,6 +40,13 @@ const { config, file } =
 
 process.env.BSM_CONFIG = file;
 
+const DEFAULT_CONFIG: TConfig = {
+  scripts: {},
+  config: {
+    allowFunction: false,
+  },
+};
+
 function loadConfig(p: string): TConfig | undefined {
   if (!p) return undefined;
   try {
@@ -44,8 +54,6 @@ function loadConfig(p: string): TConfig | undefined {
       paths: [process.cwd()],
     });
     const source: TConfig = require(p);
-
-    const defaults = { scripts: {} };
 
     if (Object.hasOwn(source, "extends") && source.extends) {
       const configs = [];
@@ -59,9 +67,9 @@ function loadConfig(p: string): TConfig | undefined {
         } else configs.push(c);
       }
 
-      return defu(source, ...configs, defaults);
+      return defu(source, ...configs, DEFAULT_CONFIG);
     } else {
-      return defu(source, defaults);
+      return defu(source, DEFAULT_CONFIG);
     }
   } catch (e) {
     return undefined;
@@ -72,6 +80,7 @@ async function main() {
   if (!config) {
     console.error(
       `\x1b[31mCannot find config ${possibleConfigFiles
+        .filter((s) => s)
         .map((s) => `'${s}'`)
         .join(" or ")}\x1b[0m`
     );
@@ -116,6 +125,12 @@ async function runScript(
   includeArgs: boolean = true
 ): Promise<void> {
   try {
+    if (typeof context === "function") {
+      const result = await executeFunction(context, script, path);
+      await runScript(result, script, path, includeArgs);
+      return;
+    }
+
     //TODO don't execute when command is not found
     await executeIfExists(context, ["_pre"], path, false, true);
 
@@ -150,6 +165,9 @@ async function runScript(
 async function executeAll(context: TScript, rest: string[], path: string[]) {
   if (typeof context === "string") {
     await runScript(context, rest, path);
+  } else if (typeof context === "function") {
+    const result = await executeFunction(context, rest, path);
+    await executeAll(result, rest, path);
   } else if (Array.isArray(context)) {
     for (let i = 0; i < context.length; i++) {
       await runScript(context[i], rest, [...path, i.toString()]);
@@ -161,6 +179,30 @@ async function executeAll(context: TScript, rest: string[], path: string[]) {
         await runScript(context[key], rest, [...path, key]);
       }
     }
+  }
+}
+
+async function executeFunction(
+  fn: Function,
+  rest: string[],
+  path: string[]
+): Promise<TScript> {
+  if (config?.config?.allowFunction) {
+    //warn that this is executing a function
+    console.warn(
+      `\x1b[33mExecuting function '${[...path, ...rest].join(
+        "."
+      )}' disable 'allowFunction' in config to disable\x1b[0m`
+    );
+    const result = await fn.call(null, argv["--"]);
+    return result ?? {};
+  } else {
+    console.error(
+      `\x1b[31mCannot execute function '${[...path, ...rest].join(
+        "."
+      )}' enable 'allowFunction' in config to allow\x1b[0m`
+    );
+    throw { code: 1, script: [...path, ...rest].join(".") };
   }
 }
 
