@@ -66,9 +66,15 @@ module.exports = {
         },
         _catch: "echo %BSM_ERROR%",
       },
-      function: (argv) => {
-        console.log(`wow cool function bro ${argv}`);
-        return "echo evil";
+      functions: {
+        _default: "bsm ~.*",
+        return: (argv) => {
+          console.log(`wow cool function bro ${argv}`);
+          return "echo evil";
+        },
+        empty: (argv) => {
+          console.log(`wow cool function bro ${argv}`);
+        },
       },
     },
   },

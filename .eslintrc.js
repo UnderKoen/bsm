@@ -9,9 +9,12 @@ module.exports = {
     {
       files: ["./src/**/*"],
       parserOptions: {
+        ecmaVersion: "latest",
         sourceType: "script",
         project: "./tsconfig.json",
       },
+      plugins: ["@typescript-eslint"],
+      parser: "@typescript-eslint/parser",
       extends: [
         "plugin:@typescript-eslint/recommended",
         "plugin:@typescript-eslint/recommended-requiring-type-checking",
@@ -22,11 +25,6 @@ module.exports = {
       },
     },
   ],
-  parser: "@typescript-eslint/parser",
-  parserOptions: {
-    ecmaVersion: "latest",
-  },
-  plugins: ["@typescript-eslint"],
   rules: {
     "quote-props": ["error", "as-needed"],
   },

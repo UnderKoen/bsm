@@ -21,16 +21,23 @@ interface TScripts {
   [key: string]: TScript;
 }
 
-type TScript = string | TScript[] | TScripts | Function;
+// eslint-disable-next-line @typescript-eslint/ban-types
+type TFunction = Function;
+type TScript = string | TScript[] | TScripts | TFunction;
 
-const possibleConfigFiles: string[] = argv.config
-  ? [argv.config]
+interface TError {
+  code: number;
+  script: string;
+}
+
+const possibleConfigFiles: (string | undefined)[] = argv.config
+  ? [argv.config as string]
   : [process.env.BSM_CONFIG, "./package.scripts.js", "./package.scripts.json"];
 
 const { config, file } =
   possibleConfigFiles.reduce<{ config: TConfig; file: string } | undefined>(
     (p, c) => {
-      if (p) return p;
+      if (p || !c) return p;
       const config = loadConfig(c);
       if (config) return { config, file: c };
       return undefined;
@@ -53,7 +60,9 @@ function loadConfig(p: string): TConfig | undefined {
     p = require.resolve(p, {
       paths: [process.cwd()],
     });
-    const source: TConfig = require(p);
+
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const source: TConfig = require(p) as TConfig;
 
     if (Object.hasOwn(source, "extends") && source.extends) {
       const configs = [];
@@ -80,7 +89,7 @@ async function main() {
   if (!config) {
     console.error(
       `\x1b[31mCannot find config ${possibleConfigFiles
-        .filter((s) => s)
+        .filter((s): s is string => s !== undefined)
         .map((s) => `'${s}'`)
         .join(" or ")}\x1b[0m`
     );
@@ -122,12 +131,14 @@ async function runScript(
   context: TScript,
   script: string[],
   path: string[] = [],
-  includeArgs: boolean = true
+  includeArgs = true
 ): Promise<void> {
   try {
     if (typeof context === "function") {
       const result = await executeFunction(context, script, path);
-      await runScript(result, script, path, includeArgs);
+      if (!result && script.length === 0) return;
+
+      await runScript(result ?? {}, script, path, includeArgs);
       return;
     }
 
@@ -151,8 +162,8 @@ async function runScript(
     }
 
     await executeIfExists(context, ["_post"], path, false, true);
-  } catch (e: any) {
-    process.env.BSM_ERROR = e?.code?.toString();
+  } catch (e) {
+    process.env.BSM_ERROR = (e as TError).code.toString();
     await executeIfExists(context, ["_onError"], path, false, true);
     if (!(await executeIfExists(context, ["_catch"], path, false))) {
       throw e;
@@ -166,8 +177,9 @@ async function executeAll(context: TScript, rest: string[], path: string[]) {
   if (typeof context === "string") {
     await runScript(context, rest, path);
   } else if (typeof context === "function") {
-    const result = await executeFunction(context, rest, path);
-    await executeAll(result, rest, path);
+    process.exit(100);
+    // const result = await executeFunction(context, rest, path);
+    // await executeAll(result, rest, path);
   } else if (Array.isArray(context)) {
     for (let i = 0; i < context.length; i++) {
       await runScript(context[i], rest, [...path, i.toString()]);
@@ -183,25 +195,25 @@ async function executeAll(context: TScript, rest: string[], path: string[]) {
 }
 
 async function executeFunction(
-  fn: Function,
+  fn: TFunction,
   rest: string[],
   path: string[]
-): Promise<TScript> {
+): Promise<TScript | undefined> {
   console.log(
     `> \x1b[93mExecuting JavaScript function\x1b[0m \x1b[90m(${[...path].join(
       "."
     )})\x1b[0m`
   );
-  const result = await fn.call(null, argv["--"]);
-  return result ?? {};
+
+  return (await fn.call(null, argv["--"])) as TScript | undefined;
 }
 
 async function executeIfExists(
   script: TScript,
   name: string[],
   path: string[],
-  includeArgs: boolean = true,
-  preventLoop: boolean = false
+  includeArgs = true,
+  preventLoop = false
 ): Promise<boolean> {
   if (preventLoop && process.env.BSM_SCRIPT === [...path, ...name].join("."))
     return false;
@@ -288,7 +300,7 @@ async function spawnScript(
   });
 }
 
-main().catch((c) => {
+main().catch((c: TError) => {
   console.error(
     `\x1b[31mScript failed with code ${c.code}\x1b[0m \x1b[90m(${c.script})\x1b[0m`
   );

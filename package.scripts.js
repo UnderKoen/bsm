@@ -11,12 +11,12 @@ module.exports = {
     prettier: {
       _default: "bsm ~.*",
       packageJson: "prettier-package-json --write",
-      eslint: "eslint --fix .",
+      eslint: "bsm lint.eslint -- --fix",
       prettier: "prettier --write .",
     },
     lint: {
       _default: "bsm ~.*",
-      eslint: "eslint .",
+      eslint: "eslint --ext .ts,.js .",
       prettier: "prettier --check .",
     },
   },
