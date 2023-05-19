@@ -20,16 +20,17 @@
     "dist"
   ],
   "scripts": {
-    "build": "esbuild src/index.ts --bundle --minify --platform=node --target=node16 --outfile=dist/index.js",
-    "build:dev": "npm run build -- --sourcemap",
-    "prettier": "bsm prettier",
-    "watch": "npm run build:dev -- --watch"
+    "build": "bsm build",
+    "build:dev": "bsm build.dev",
+    "build:watch": "bsm build.watch",
+    "prettier": "bsm prettier"
   },
   "devDependencies": {
     "@types/minimist": "^1.2.2",
     "@types/node": "^18.16.3",
     "@typescript-eslint/eslint-plugin": "^5.59.2",
     "@typescript-eslint/parser": "^5.59.2",
+    "@under_koen/bsm": "^0.0.1",
     "defu": "^6.1.2",
     "esbuild": "0.17.18",
     "eslint": "^8.39.0",
