@@ -4,6 +4,8 @@ import minimist from "minimist";
 import { defu } from "defu";
 
 import child_process from "node:child_process";
+import * as fs from "node:fs";
+import path from "path";
 
 const argv = minimist(process.argv.slice(2), { "--": true });
 
@@ -96,6 +98,8 @@ async function main() {
     process.exit(1);
   }
 
+  addToPath(process.env, await getNpmBin());
+
   for (const script of argv._) {
     if (script.startsWith("~") && process.env.BSM_PATH) {
       const prefix = process.env.BSM_PATH.split(".");
@@ -109,6 +113,36 @@ async function main() {
 
     await runScript(config.scripts, script.split("."));
   }
+}
+
+function addToPath(env: NodeJS.ProcessEnv, path: string | null): void {
+  if (!path) return;
+  if (process.platform === "win32") {
+    if (!process.env.Path || process.env.Path.includes(path)) return;
+    env.Path = `${process.env.Path};${path}`;
+  } else {
+    if (!process.env.PATH || process.env.PATH.includes(path)) return;
+    env.PATH = `${process.env.PATH}:${path}`;
+  }
+}
+
+async function getNpmBin(): Promise<string | null> {
+  let cwd = process.cwd();
+
+  while (
+    await fs.promises
+      .access(path.join(cwd, "node_modules/.bin"), fs.constants.X_OK)
+      .then(
+        () => false, // exists
+        () => true // doesn't exist
+      )
+  ) {
+    const cwd2 = path.join(cwd, "../");
+    if (cwd2 === cwd) return null;
+    cwd = cwd2;
+  }
+
+  return path.join(cwd, "node_modules/.bin");
 }
 
 function getScript(scripts: TScript, name: string[]): TScript | undefined {
@@ -272,11 +306,11 @@ async function spawnScript(
     script += " " + argv["--"].join(" ");
   }
 
-  return new Promise((resolve, reject) => {
-    console.log(`> ${script} \x1b[90m(${path.join(".")})\x1b[0m`);
+  console.log(`> ${script} \x1b[90m(${path.join(".")})\x1b[0m`);
 
-    if (script === "") return resolve();
+  if (script === "") return;
 
+  return await new Promise((resolve, reject) => {
     const s = child_process.spawn(script, [], {
       stdio: "inherit",
       shell: true,
