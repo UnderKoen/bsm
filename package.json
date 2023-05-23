@@ -1,6 +1,6 @@
 {
   "name": "@under_koen/bsm",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "BSM (Basic Script Manager) is a useful tool that enables you to create clear and concise scripts without cluttering your `package.json` file.",
   "license": "MIT",
   "author": "Koen van Staveren <koen@underkoen.nl>",
@@ -23,14 +23,15 @@
     "build": "bsm build",
     "build:dev": "bsm build.dev",
     "build:watch": "bsm build.watch",
-    "prettier": "bsm prettier"
+    "prettier": "bsm prettier",
+    "prepublishOnly": "bsm build.prod"
   },
   "devDependencies": {
     "@types/minimist": "^1.2.2",
     "@types/node": "^18.16.3",
     "@typescript-eslint/eslint-plugin": "^5.59.2",
     "@typescript-eslint/parser": "^5.59.2",
-    "@under_koen/bsm": "^0.0.1",
+    "@under_koen/bsm": "^0.0.2",
     "defu": "^6.1.2",
     "esbuild": "0.17.18",
     "eslint": "^8.39.0",
