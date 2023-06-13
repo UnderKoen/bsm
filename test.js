@@ -75,8 +75,14 @@ module.exports = {
         empty: (argv) => {
           console.log(`wow cool function bro ${argv}`);
         },
-        error() {
-          throw new Error("wow cool error bro");
+        error: {
+          error() {
+            throw new Error("wow cool error bro");
+          },
+          _catch: "echo %BSM_ERROR%",
+        },
+        _pre: {
+          test: 'echo "pre test"',
         },
       },
     },

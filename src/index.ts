@@ -169,7 +169,8 @@ async function runScript(
   context: TScript,
   script: string[],
   path: string[] = [],
-  includeArgs = true
+  includeArgs = true,
+  ignoreNotFound = false
 ): Promise<void> {
   try {
     if (typeof context === "function") {
@@ -197,10 +198,12 @@ async function runScript(
     const rest = script.slice(1);
 
     if (script.length === 0) {
-      await executeScript(context, path, includeArgs);
+      await executeScript(context, path, includeArgs, ignoreNotFound);
     } else if (script[0] === "*") {
       await executeAll(context, rest, path);
-    } else if (await executeIfExists(context, script, path)) {
+    } else if (
+      await executeIfExists(context, script, path, true, false, false)
+    ) {
       // already executed
     } else {
       //TODO improve error message
@@ -230,13 +233,13 @@ async function executeAll(context: TScript, rest: string[], path: string[]) {
     process.exit(100);
   } else if (Array.isArray(context)) {
     for (let i = 0; i < context.length; i++) {
-      await runScript(context[i], rest, [...path, i.toString()]);
+      await runScript(context[i], rest, [...path, i.toString()], true, true);
     }
   } else {
     for (const key in context) {
       if (key.startsWith("_")) continue;
       if (Object.hasOwn(context, key)) {
-        await runScript(context[key], rest, [...path, key]);
+        await runScript(context[key], rest, [...path, key], true, true);
       }
     }
   }
@@ -261,7 +264,8 @@ async function executeIfExists(
   name: string[],
   path: string[],
   includeArgs = true,
-  preventLoop = false
+  preventLoop = false,
+  ignoreNotFound = true
 ): Promise<boolean> {
   if (preventLoop && process.env.BSM_SCRIPT === [...path, ...name].join("."))
     return false;
@@ -272,9 +276,21 @@ async function executeIfExists(
 
   if (Array.isArray(script)) {
     const i = parseInt(sub);
-    await runScript(script[i], name.slice(1), [...path, sub], includeArgs);
+    await runScript(
+      script[i],
+      name.slice(1),
+      [...path, sub],
+      includeArgs,
+      ignoreNotFound
+    );
   } else {
-    await runScript(script[sub], name.slice(1), [...path, sub], includeArgs);
+    await runScript(
+      script[sub],
+      name.slice(1),
+      [...path, sub],
+      includeArgs,
+      ignoreNotFound
+    );
   }
 
   return true;
@@ -283,7 +299,8 @@ async function executeIfExists(
 async function executeScript(
   script: TScript,
   path: string[],
-  includeArgs: boolean
+  includeArgs: boolean,
+  ignoreNotFound: boolean
 ): Promise<void> {
   switch (typeof script) {
     case "string":
@@ -300,7 +317,7 @@ async function executeScript(
           /* empty */
         } else if (await executeIfExists(script, ["_default"], path)) {
           /* empty */
-        } else {
+        } else if (!ignoreNotFound) {
           console.error(
             `\x1b[31mScript '${[...path].join(".")}' is not executable\x1b[0m`
           );
