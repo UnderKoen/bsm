@@ -83,7 +83,10 @@ function loadConfig(p: string): TConfig | undefined {
       return defu(source, DEFAULT_CONFIG);
     }
   } catch (e) {
-    return undefined;
+    if (e.code === "MODULE_NOT_FOUND") return undefined;
+    console.error(`\x1b[31mError loading config '${p}'\x1b[0m`);
+    console.error(e);
+    process.exit(1);
   }
 }
 
@@ -211,9 +214,8 @@ async function executeAll(context: TScript, rest: string[], path: string[]) {
   if (typeof context === "string") {
     await runScript(context, rest, path);
   } else if (typeof context === "function") {
+    //due to that function are already executed, we don't need to do anything
     process.exit(100);
-    // const result = await executeFunction(context, rest, path);
-    // await executeAll(result, rest, path);
   } else if (Array.isArray(context)) {
     for (let i = 0; i < context.length; i++) {
       await runScript(context[i], rest, [...path, i.toString()]);
