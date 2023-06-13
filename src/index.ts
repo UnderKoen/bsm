@@ -83,9 +83,10 @@ function loadConfig(p: string): TConfig | undefined {
       return defu(source, DEFAULT_CONFIG);
     }
   } catch (e) {
-    if (e.code === "MODULE_NOT_FOUND") return undefined;
-    console.error(`\x1b[31mError loading config '${p}'\x1b[0m`);
+    // @ts-expect-error code is not defined in the node typings
+    if (e?.code === "MODULE_NOT_FOUND") return undefined;
     console.error(e);
+    console.error(`\x1b[31mError loading config '${p}'\x1b[0m`);
     process.exit(1);
   }
 }
@@ -172,11 +173,22 @@ async function runScript(
 ): Promise<void> {
   try {
     if (typeof context === "function") {
-      const result = await executeFunction(context, script, path);
-      if (!result && script.length === 0) return;
+      try {
+        const result = await executeFunction(context, script, path);
+        if (!result && script.length === 0) return;
 
-      await runScript(result ?? {}, script, path, includeArgs);
-      return;
+        await runScript(result ?? {}, script, path, includeArgs);
+        return;
+      } catch (e) {
+        console.error(e);
+        console.error(
+          `\x1b[31mError executing function '${path.join(".")}'\x1b[0m`
+        );
+        throw {
+          code: 1,
+          script: path.join("."),
+        } as TError;
+      }
     }
 
     //TODO don't execute when command is not found

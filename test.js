@@ -75,6 +75,9 @@ module.exports = {
         empty: (argv) => {
           console.log(`wow cool function bro ${argv}`);
         },
+        error() {
+          throw new Error("wow cool error bro");
+        },
       },
     },
   },
