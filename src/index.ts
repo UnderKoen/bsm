@@ -7,6 +7,8 @@ import child_process from "node:child_process";
 import * as fs from "node:fs";
 import path from "path";
 
+import { isCI } from "ci-info";
+
 const argv = minimist(process.argv.slice(2), { "--": true });
 
 interface TConfig {
@@ -46,7 +48,6 @@ const { config, file } =
     },
     undefined
   ) ?? {};
-
 process.env.BSM_CONFIG = file;
 
 const DEFAULT_CONFIG: TConfig = {
@@ -313,7 +314,11 @@ async function executeScript(
           await runScript(script[i], [], [...path, i.toString()]);
         }
       } else {
-        if (await executeIfExists(script, [`_${process.platform}`], path)) {
+        if (isCI && (await executeIfExists(script, [`_ci`], path))) {
+          /* empty */
+        } else if (
+          await executeIfExists(script, [`_${process.platform}`], path)
+        ) {
           /* empty */
         } else if (await executeIfExists(script, ["_default"], path)) {
           /* empty */
