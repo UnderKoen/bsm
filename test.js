@@ -79,6 +79,9 @@ module.exports = {
           error() {
             throw new Error("wow cool error bro");
           },
+          return() {
+            return "exit 1";
+          },
           _catch: "echo %BSM_ERROR%",
         },
         _pre: {

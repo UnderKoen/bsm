@@ -190,8 +190,8 @@ async function runScript(
         const result = await executeFunction(context, script, path);
         if (!result && script.length === 0) return;
 
-        await runScript(result ?? {}, script, path, includeArgs);
-        return;
+        context = result ?? {};
+        includeArgs = true;
       } catch (e) {
         console.error(e);
         console.error(
@@ -212,9 +212,16 @@ async function runScript(
     if (script.length === 0) {
       await executeScript(context, path, includeArgs, ignoreNotFound);
     } else if (script[0] === "*") {
-      await executeAll(context, rest, path);
+      await executeAll(context, rest, path, includeArgs, ignoreNotFound);
     } else if (
-      await executeIfExists(context, script, path, true, false, false)
+      await executeIfExists(
+        context,
+        script,
+        path,
+        includeArgs,
+        false,
+        ignoreNotFound
+      )
     ) {
       // already executed
     } else {
@@ -245,13 +252,25 @@ async function executeAll(context: TScript, rest: string[], path: string[]) {
     process.exit(100);
   } else if (Array.isArray(context)) {
     for (let i = 0; i < context.length; i++) {
-      await runScript(context[i], rest, [...path, i.toString()], true, true);
+      await runScript(
+        context[i],
+        rest,
+        [...path, i.toString()],
+        includeArgs,
+        ignoreNotFound
+      );
     }
   } else {
     for (const key in context) {
       if (key.startsWith("_")) continue;
       if (Object.hasOwn(context, key)) {
-        await runScript(context[key], rest, [...path, key], true, true);
+        await runScript(
+          context[key],
+          rest,
+          [...path, key],
+          includeArgs,
+          ignoreNotFound
+        );
       }
     }
   }
@@ -322,16 +341,48 @@ async function executeScript(
     case "object":
       if (Array.isArray(script)) {
         for (let i = 0; i < script.length; i++) {
-          await runScript(script[i], [], [...path, i.toString()]);
+          await runScript(
+            script[i],
+            [],
+            [...path, i.toString()],
+            includeArgs,
+            ignoreNotFound
+          );
         }
       } else {
-        if (isCI && (await executeIfExists(script, [`_ci`], path))) {
-          /* empty */
-        } else if (
-          await executeIfExists(script, [`_${process.platform}`], path)
+        if (
+          isCI &&
+          (await executeIfExists(
+            script,
+            [`_ci`],
+            path,
+            includeArgs,
+            false,
+            ignoreNotFound
+          ))
         ) {
           /* empty */
-        } else if (await executeIfExists(script, ["_default"], path)) {
+        } else if (
+          await executeIfExists(
+            script,
+            [`_${process.platform}`],
+            path,
+            includeArgs,
+            false,
+            ignoreNotFound
+          )
+        ) {
+          /* empty */
+        } else if (
+          await executeIfExists(
+            script,
+            ["_default"],
+            path,
+            includeArgs,
+            false,
+            ignoreNotFound
+          )
+        ) {
           /* empty */
         } else if (!ignoreNotFound) {
           console.error(
