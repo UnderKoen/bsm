@@ -450,7 +450,7 @@ You can extend scripts by using the `extends` key. You can import scripts from o
 
 ```javascript
 module.exports = {
-  extends: ['@under_koen/bsm/package.scripts.js', './test.js'],
+  extends: ['@under_koen/bsm/package.scripts.js'],
   scripts: {},
 }
 ```
@@ -460,6 +460,36 @@ bsm lint
 ```
 
 The above command will execute `lint` coming from the `package.scripts.js` of `@under_koen/bsm`.
+
+#### Extending with options (experimental)
+
+You can extend scripts with options by using the `extends` key. You can import scripts from other files or packages.
+
+```javascript
+// package.scripts.js
+module.exports = {
+  extends: [
+    ['./test', "World"]
+  ],
+  scripts: {},
+}
+```
+
+```javascript
+// test.js
+
+module.exports = (name) => ({
+  scripts: {
+    test: `echo Hello ${name}!`,
+  },
+});
+```
+
+```bash
+bsm test
+```
+
+The above command will execute `echo Hello World!`.
 
 ## Future plans
 
