@@ -8,33 +8,10 @@ import * as fs from "node:fs";
 import path from "path";
 
 import { isCI } from "ci-info";
+import { TConfig, TScript, ExtendConfig, TError, TFunction } from "./types";
+import { printHelp } from "./help";
 
 const argv = minimist(process.argv.slice(2), { "--": true });
-
-export type ExtendConfig = string | [string, ...unknown[]];
-
-interface TConfig {
-  extends?: ExtendConfig[];
-  scripts: TScripts;
-  config?: {
-    allowFunction?: boolean;
-  };
-}
-
-// a record can't be used here because it doesn't allow for circular references
-// eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style
-interface TScripts {
-  [key: string]: TScript;
-}
-
-// eslint-disable-next-line @typescript-eslint/ban-types
-type TFunction = Function;
-type TScript = string | TScript[] | TScripts | TFunction;
-
-interface TError {
-  code: number;
-  script: string;
-}
 
 const possibleConfigFiles: (string | undefined)[] = argv.config
   ? [argv.config as string]
@@ -113,6 +90,10 @@ async function main() {
     );
     process.exit(1);
   }
+
+  printHelp(config, argv, argv.h);
+  printHelp(config, argv, argv.help);
+  printHelp(config, argv, argv._.length === 0);
 
   addToPath(process.env, await getNpmBin());
 
@@ -244,7 +225,13 @@ async function runScript(
   }
 }
 
-async function executeAll(context: TScript, rest: string[], path: string[]) {
+async function executeAll(
+  context: TScript,
+  rest: string[],
+  path: string[],
+  includeArgs: boolean,
+  ignoreNotFound: boolean
+) {
   if (typeof context === "string") {
     await runScript(context, rest, path);
   } else if (typeof context === "function") {
