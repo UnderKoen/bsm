@@ -98,6 +98,7 @@ module.exports = {
 ```
 
 In this example the following scripts are available:
+
 - `bsm example.test`
 - `bsm example.variant`
 - `bsm example.subgroups.test`
@@ -112,6 +113,7 @@ module.exports = {
 ```
 
 In this example the following scripts are available:
+
 - `bsm example` (will run all scripts in the array)
 - `bsm example.0`
 - `bsm example.1`
@@ -138,9 +140,10 @@ module.exports = {
 Specified scripts replace the default script when an condition is met.
 
 The order of precedence is as follows:
-- _ci
-- _[os]
-- _default
+
+- \_ci
+- \_[os]
+- \_default
 
 #### CI Specified scripts
 
@@ -307,7 +310,7 @@ module.exports = {
 bsm example
 ```
 
-The above command will execute `example._default` and `example._onError`. 
+The above command will execute `example._default` and `example._onError`.
 This will also exit with code `1`.
 
 #### Catch hooks
@@ -450,9 +453,9 @@ You can extend scripts by using the `extends` key. You can import scripts from o
 
 ```javascript
 module.exports = {
-  extends: ['@under_koen/bsm/package.scripts.js'],
+  extends: ["@under_koen/bsm/package.scripts.js"],
   scripts: {},
-}
+};
 ```
 
 ```bash
@@ -468,11 +471,9 @@ You can extend scripts with options by using the `extends` key. You can import s
 ```javascript
 // package.scripts.js
 module.exports = {
-  extends: [
-    ['./test', "World"]
-  ],
+  extends: [["./test", "World"]],
   scripts: {},
-}
+};
 ```
 
 ```javascript

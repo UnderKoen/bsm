@@ -4,7 +4,7 @@ import minimist from "minimist";
 export function printHelp(
   config: TConfig,
   argv: minimist.ParsedArgs,
-  args: unknown
+  args: unknown,
 ): void {
   const helps: string[] = [];
   if (typeof args === "boolean") {
@@ -84,7 +84,7 @@ export function printHelp(
 
 export function printCommands(
   script: TScript | undefined,
-  path: string[] = []
+  path: string[] = [],
 ) {
   if (Array.isArray(script)) {
     script.forEach((s, i) => {

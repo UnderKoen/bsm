@@ -25,7 +25,7 @@ const { config, file } =
       if (config) return { config, file: c };
       return undefined;
     },
-    undefined
+    undefined,
   ) ?? {};
 process.env.BSM_CONFIG = file;
 
@@ -59,7 +59,7 @@ function loadConfig(p: ExtendConfig): TConfig | undefined {
         if (Array.isArray(extendsConfig)) extendsConfig = extendsConfig[0];
         if (!c) {
           console.error(
-            `\x1b[31mCannot find config '${extendsConfig}' to extend\x1b[0m`
+            `\x1b[31mCannot find config '${extendsConfig}' to extend\x1b[0m`,
           );
           process.exit(1);
         } else configs.push(c);
@@ -86,7 +86,7 @@ async function main() {
       `\x1b[31mCannot find config ${possibleConfigFiles
         .filter((s): s is string => s !== undefined)
         .map((s) => `'${s}'`)
-        .join(" or ")}\x1b[0m`
+        .join(" or ")}\x1b[0m`,
     );
     process.exit(1);
   }
@@ -131,7 +131,7 @@ async function getNpmBin(): Promise<string | null> {
       .access(path.join(cwd, "node_modules/.bin"), fs.constants.X_OK)
       .then(
         () => false, // exists
-        () => true // doesn't exist
+        () => true, // doesn't exist
       )
   ) {
     const cwd2 = path.join(cwd, "../");
@@ -163,7 +163,7 @@ async function runScript(
   script: string[],
   path: string[] = [],
   includeArgs = true,
-  ignoreNotFound = false
+  ignoreNotFound = false,
 ): Promise<void> {
   try {
     if (typeof context === "function") {
@@ -176,7 +176,7 @@ async function runScript(
       } catch (e) {
         console.error(e);
         console.error(
-          `\x1b[31mError executing function '${path.join(".")}'\x1b[0m`
+          `\x1b[31mError executing function '${path.join(".")}'\x1b[0m`,
         );
         throw {
           code: 1,
@@ -193,7 +193,7 @@ async function runScript(
     if (script.length === 0) {
       await executeScript(context, path, includeArgs, ignoreNotFound);
     } else if (script[0] === "*") {
-      await executeAll(context, rest, path, includeArgs, ignoreNotFound);
+      await executeAll(context, rest, path, includeArgs, true);
     } else if (
       await executeIfExists(
         context,
@@ -201,14 +201,14 @@ async function runScript(
         path,
         includeArgs,
         false,
-        ignoreNotFound
+        ignoreNotFound,
       )
     ) {
       // already executed
     } else {
       //TODO improve error message
       console.error(
-        `\x1b[31mScript '${[...path, ...script].join(".")}' not found\x1b[0m`
+        `\x1b[31mScript '${[...path, ...script].join(".")}' not found\x1b[0m`,
       );
       return process.exit(127);
     }
@@ -230,7 +230,7 @@ async function executeAll(
   rest: string[],
   path: string[],
   includeArgs: boolean,
-  ignoreNotFound: boolean
+  ignoreNotFound: boolean,
 ) {
   if (typeof context === "string") {
     await runScript(context, rest, path);
@@ -244,7 +244,7 @@ async function executeAll(
         rest,
         [...path, i.toString()],
         includeArgs,
-        ignoreNotFound
+        ignoreNotFound,
       );
     }
   } else {
@@ -256,7 +256,7 @@ async function executeAll(
           rest,
           [...path, key],
           includeArgs,
-          ignoreNotFound
+          ignoreNotFound,
         );
       }
     }
@@ -266,12 +266,12 @@ async function executeAll(
 async function executeFunction(
   fn: TFunction,
   rest: string[],
-  path: string[]
+  path: string[],
 ): Promise<TScript | undefined> {
   console.log(
     `> \x1b[93mExecuting JavaScript function\x1b[0m \x1b[90m(${[...path].join(
-      "."
-    )})\x1b[0m`
+      ".",
+    )})\x1b[0m`,
   );
 
   return (await fn.call(null, argv["--"])) as TScript | undefined;
@@ -283,7 +283,7 @@ async function executeIfExists(
   path: string[],
   includeArgs = true,
   preventLoop = false,
-  ignoreNotFound = true
+  ignoreNotFound = true,
 ): Promise<boolean> {
   if (preventLoop && process.env.BSM_SCRIPT === [...path, ...name].join("."))
     return false;
@@ -299,7 +299,7 @@ async function executeIfExists(
       name.slice(1),
       [...path, sub],
       includeArgs,
-      ignoreNotFound
+      ignoreNotFound,
     );
   } else {
     await runScript(
@@ -307,7 +307,7 @@ async function executeIfExists(
       name.slice(1),
       [...path, sub],
       includeArgs,
-      ignoreNotFound
+      ignoreNotFound,
     );
   }
 
@@ -318,7 +318,7 @@ async function executeScript(
   script: TScript,
   path: string[],
   includeArgs: boolean,
-  ignoreNotFound: boolean
+  ignoreNotFound: boolean,
 ): Promise<void> {
   switch (typeof script) {
     case "string":
@@ -333,7 +333,7 @@ async function executeScript(
             [],
             [...path, i.toString()],
             includeArgs,
-            ignoreNotFound
+            ignoreNotFound,
           );
         }
       } else {
@@ -345,7 +345,7 @@ async function executeScript(
             path,
             includeArgs,
             false,
-            ignoreNotFound
+            ignoreNotFound,
           ))
         ) {
           /* empty */
@@ -356,7 +356,7 @@ async function executeScript(
             path,
             includeArgs,
             false,
-            ignoreNotFound
+            ignoreNotFound,
           )
         ) {
           /* empty */
@@ -367,13 +367,13 @@ async function executeScript(
             path,
             includeArgs,
             false,
-            ignoreNotFound
+            ignoreNotFound,
           )
         ) {
           /* empty */
         } else if (!ignoreNotFound) {
           console.error(
-            `\x1b[31mScript '${[...path].join(".")}' is not executable\x1b[0m`
+            `\x1b[31mScript '${[...path].join(".")}' is not executable\x1b[0m`,
           );
           return process.exit(127);
         }
@@ -385,7 +385,7 @@ async function executeScript(
 async function spawnScript(
   script: string,
   path: string[],
-  includeArgs: boolean
+  includeArgs: boolean,
 ): Promise<void> {
   if (includeArgs && argv["--"]?.length) {
     script += " " + argv["--"].join(" ");
@@ -420,8 +420,14 @@ async function spawnScript(
 }
 
 main().catch((c: TError) => {
+  if (c.code === undefined) {
+    console.error(c);
+    console.error(`\x1b[31mScript failed\x1b[0m`);
+    process.exit(1);
+  }
+
   console.error(
-    `\x1b[31mScript failed with code ${c.code}\x1b[0m \x1b[90m(${c.script})\x1b[0m`
+    `\x1b[31mScript failed with code ${c.code}\x1b[0m \x1b[90m(${c.script})\x1b[0m`,
   );
   process.exit(c.code);
 });
