@@ -82,10 +82,10 @@ module.exports = {
           return() {
             return "exit 1";
           },
-          _catch: "echo %BSM_ERROR%",
+          _onError: "echo %BSM_ERROR%",
         },
         _pre: {
-          test: 'echo "pre test"',
+          _default: 'echo "pre test"',
         },
       },
     },

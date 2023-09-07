@@ -18,7 +18,14 @@ export interface TScripts {
 export type TFunction = Function;
 export type TScript = string | TScript[] | TScripts | TFunction;
 
-export interface TError {
-  code: number;
-  script: string;
-}
+export type TError =
+  | {
+      code: number;
+      function?: undefined;
+      script: string;
+    }
+  | {
+      code: undefined;
+      function: Error;
+      script: string;
+    };

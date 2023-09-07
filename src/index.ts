@@ -29,12 +29,12 @@ async function main() {
       const sub = getScript(config.scripts, prefix);
 
       if (sub) {
-        await runScript(sub, script.split(".").splice(1), prefix);
+        await runScript(sub, script.split(".").splice(1), prefix, {});
         continue;
       }
     }
 
-    await runScript(config.scripts, script.split("."));
+    await runScript(config.scripts, script.split("."), [], {});
   }
 }
 
@@ -85,6 +85,12 @@ function getScript(scripts: TScript, name: string[]): TScript | undefined {
 }
 
 main().catch((c: TError) => {
+  if (c.function) {
+    console.error(c.function);
+    console.error(`\x1b[31mError executing function '${c.script}'\x1b[0m`);
+    process.exit(1);
+  }
+
   if (c.code === undefined) {
     console.error(c);
     console.error(`\x1b[31mScript failed\x1b[0m`);

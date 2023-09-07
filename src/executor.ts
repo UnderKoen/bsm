@@ -1,246 +1,88 @@
-import { TError, TFunction, TScript } from "./types";
+import { TError, TFunction, TScript, TScripts } from "./types";
 import child_process from "node:child_process";
 import { isCI } from "ci-info";
+
+type Options = {
+  excludeArgs?: true;
+  ignoreNotFound?: true;
+};
 
 export async function runScript(
   context: TScript,
   script: string[],
-  path: string[] = [],
-  includeArgs = true,
-  ignoreNotFound = false,
+  path: string[],
+  options: Options,
 ): Promise<void> {
-  try {
-    if (typeof context === "function") {
-      try {
-        const result = await executeFunction(context, script, path);
-        if (!result && script.length === 0) return;
-
-        context = result ?? {};
-        includeArgs = true;
-      } catch (e) {
-        console.error(e);
-        console.error(
-          `\x1b[31mError executing function '${path.join(".")}'\x1b[0m`,
-        );
-        throw {
-          code: 1,
-          script: path.join("."),
-        } as TError;
-      }
-    }
-
-    //TODO don't execute when command is not found
-    await executeIfExists(context, ["_pre"], path, false, true);
-
-    const rest = script.slice(1);
-
-    if (script.length === 0) {
-      await executeScript(context, path, includeArgs, ignoreNotFound);
-    } else if (script[0] === "*") {
-      await executeAll(context, rest, path, includeArgs, true);
-    } else if (
-      await executeIfExists(
-        context,
-        script,
-        path,
-        includeArgs,
-        false,
-        ignoreNotFound,
-      )
-    ) {
-      // already executed
-    } else {
-      //TODO improve error message
-      console.error(
-        `\x1b[31mScript '${[...path, ...script].join(".")}' not found\x1b[0m`,
-      );
-      return process.exit(127);
-    }
-
-    await executeIfExists(context, ["_post"], path, false, true);
-  } catch (e) {
-    process.env.BSM_ERROR = (e as TError).code.toString();
-    await executeIfExists(context, ["_onError"], path, false, true);
-    if (!(await executeIfExists(context, ["_catch"], path, false))) {
-      throw e;
-    }
-  } finally {
-    await executeIfExists(context, ["_finally"], path, false, true);
+  if (typeof context === "function") {
+    await executeFunction(context, script, path, options);
+  } else if (typeof context === "string") {
+    await executeString(context, script, path, options);
+  } else if (Array.isArray(context)) {
+    await executeArray(context, script, path, options);
+  } else {
+    await executeObject(context, script, path, options);
   }
 }
 
-async function executeAll(
-  context: TScript,
-  rest: string[],
-  path: string[],
-  includeArgs: boolean,
-  ignoreNotFound: boolean,
-) {
-  if (typeof context === "string") {
-    await runScript(context, rest, path);
-  } else if (typeof context === "function") {
-    //due to that function are already executed, we don't need to do anything
-    process.exit(100);
-  } else if (Array.isArray(context)) {
-    for (let i = 0; i < context.length; i++) {
-      await runScript(
-        context[i],
-        rest,
-        [...path, i.toString()],
-        includeArgs,
-        ignoreNotFound,
-      );
-    }
-  } else {
-    for (const key in context) {
-      if (key.startsWith("_")) continue;
-      if (Object.hasOwn(context, key)) {
-        await runScript(
-          context[key],
-          rest,
-          [...path, key],
-          includeArgs,
-          ignoreNotFound,
-        );
-      }
-    }
-  }
+function notFound(path: string[], options: Options): never | void {
+  if (options.ignoreNotFound) return;
+  console.error(`\x1b[31mScript '${path.join(".")}' not found\x1b[0m`);
+  process.exit(127);
 }
 
 async function executeFunction(
-  fn: TFunction,
-  rest: string[],
+  context: TFunction,
+  script: string[],
   path: string[],
-): Promise<TScript | undefined> {
+  options: Options,
+): Promise<void> {
   console.log(
     `> \x1b[93mExecuting JavaScript function\x1b[0m \x1b[90m(${[...path].join(
       ".",
     )})\x1b[0m`,
   );
 
-  return (await fn.call(null, process.argv)) as TScript | undefined;
-}
+  let result: TScript | undefined;
+  try {
+    result = (await context.call(null, process.argv)) as TScript | undefined;
+  } catch (e) {
+    if (e instanceof Error) {
+      // Remove BSM stack trace
+      e.stack = e.stack?.split("    at executeFunction")[0];
+    }
 
-async function executeIfExists(
-  script: TScript,
-  name: string[],
-  path: string[],
-  includeArgs = true,
-  preventLoop = false,
-  ignoreNotFound = true,
-): Promise<boolean> {
-  if (preventLoop && process.env.BSM_SCRIPT === [...path, ...name].join("."))
-    return false;
-  const sub = name[0];
-
-  if (typeof script !== "object") return false;
-  if (!Object.hasOwn(script, sub)) return false;
-
-  if (Array.isArray(script)) {
-    const i = parseInt(sub);
-    await runScript(
-      script[i],
-      name.slice(1),
-      [...path, sub],
-      includeArgs,
-      ignoreNotFound,
-    );
-  } else {
-    await runScript(
-      script[sub],
-      name.slice(1),
-      [...path, sub],
-      includeArgs,
-      ignoreNotFound,
-    );
+    throw {
+      function: e,
+      script: path.join("."),
+    } as TError;
   }
 
-  return true;
+  if (result == undefined) {
+    if (script.length > 0) notFound([...path, ...script], options);
+    return;
+  }
+
+  await runScript(result, script, path, options);
 }
 
-async function executeScript(
-  script: TScript,
+async function executeString(
+  context: string,
+  script: string[],
   path: string[],
-  includeArgs: boolean,
-  ignoreNotFound: boolean,
+  options: Options,
 ): Promise<void> {
-  switch (typeof script) {
-    case "string":
-      //TODO optimise for running bsm again
-      await spawnScript(script, path, includeArgs);
-      return;
-    case "object":
-      if (Array.isArray(script)) {
-        for (let i = 0; i < script.length; i++) {
-          await runScript(
-            script[i],
-            [],
-            [...path, i.toString()],
-            includeArgs,
-            ignoreNotFound,
-          );
-        }
-      } else {
-        if (
-          isCI &&
-          (await executeIfExists(
-            script,
-            [`_ci`],
-            path,
-            includeArgs,
-            false,
-            ignoreNotFound,
-          ))
-        ) {
-          /* empty */
-        } else if (
-          await executeIfExists(
-            script,
-            [`_${process.platform}`],
-            path,
-            includeArgs,
-            false,
-            ignoreNotFound,
-          )
-        ) {
-          /* empty */
-        } else if (
-          await executeIfExists(
-            script,
-            ["_default"],
-            path,
-            includeArgs,
-            false,
-            ignoreNotFound,
-          )
-        ) {
-          /* empty */
-        } else if (!ignoreNotFound) {
-          console.error(
-            `\x1b[31mScript '${[...path].join(".")}' is not executable\x1b[0m`,
-          );
-          return process.exit(127);
-        }
-      }
-      return;
-  }
-}
+  if (script.length > 0) return notFound([...path, ...script], options);
 
-async function spawnScript(
-  script: string,
-  path: string[],
-  includeArgs: boolean,
-): Promise<void> {
-  if (includeArgs && process.argv?.length) {
-    script += " " + process.argv.join(" ");
+  if (!options.excludeArgs && process.argv?.length) {
+    context += " " + process.argv.join(" ");
   }
 
-  console.log(`> ${script} \x1b[90m(${path.join(".")})\x1b[0m`);
+  console.log(`> ${context} \x1b[90m(${path.join(".")})\x1b[0m`);
 
-  if (script === "") return;
+  if (context === "") return;
 
   return await new Promise((resolve, reject) => {
-    const s = child_process.spawn(script, [], {
+    const s = child_process.spawn(context, [], {
       stdio: "inherit",
       shell: true,
       env: {
@@ -261,4 +103,103 @@ async function spawnScript(
       }
     });
   });
+}
+
+async function executeArray(
+  context: TScript[],
+  script: string[],
+  path: string[],
+  options: Options,
+): Promise<void> {
+  if (script.length === 0 || script[0] === "*") {
+    for (let i = 0; i < context.length; i++) {
+      await runScript(context[i], script.slice(1), [...path, i.toString()], {
+        ...options,
+        ignoreNotFound: script[0] === "*" ? true : options.ignoreNotFound,
+      });
+    }
+    return;
+  } else {
+    const sub = script[0];
+    const element = context[parseInt(sub)];
+
+    if (element === undefined) return notFound([...path, sub], options);
+
+    await runScript(element, script.slice(1), [...path, sub], options);
+  }
+}
+
+async function executeObject(
+  context: TScripts,
+  script: string[],
+  path: string[],
+  options: Options,
+): Promise<void> {
+  try {
+    //TODO don't execute when command is not found
+    await executeHook(context, "_pre", path, options);
+
+    if (script.length === 0) {
+      await runObject(context, path, options);
+    } else if (script[0] === "*") {
+      for (const key in context) {
+        if (key.startsWith("_")) continue;
+        if (Object.hasOwn(context, key)) {
+          await runScript(context[key], script.slice(1), [...path, key], {
+            ...options,
+            ignoreNotFound: script[0] === "*" ? true : options.ignoreNotFound,
+          });
+        }
+      }
+    } else {
+      const sub = script[0];
+      if (Object.hasOwn(context, sub)) {
+        await runScript(context[sub], script.slice(1), [...path, sub], options);
+      } else {
+        return notFound([...path, sub], options);
+      }
+    }
+
+    await executeHook(context, "_post", path, options);
+  } catch (e) {
+    process.env.BSM_ERROR = (e as TError).code?.toString() ?? "1";
+
+    await executeHook(context, "_onError", path, options);
+
+    if (!(await executeHook(context, "_catch", path, options))) {
+      throw e;
+    }
+  } finally {
+    await executeHook(context, "_finally", path, options);
+  }
+}
+
+async function executeHook(
+  context: TScripts,
+  hook: string,
+  path: string[],
+  options: Options,
+): Promise<boolean> {
+  if (!Object.hasOwn(context, hook)) return false;
+
+  await runScript(context[hook], [], [...path, hook], {
+    ...options,
+    excludeArgs: true,
+  });
+
+  return true;
+}
+
+async function runObject(context: TScripts, path: string[], options: Options) {
+  const platform = `_${process.platform}`;
+
+  if (isCI && Object.hasOwn(context, "_ci")) {
+    await runScript(context["_ci"], [], [...path, "_ci"], options);
+  } else if (Object.hasOwn(context, platform)) {
+    await runScript(context[platform], [], [...path, platform], options);
+  } else if (Object.hasOwn(context, "_default")) {
+    await runScript(context["_default"], [], [...path, "_default"], options);
+  } else {
+    notFound(path, options);
+  }
 }
