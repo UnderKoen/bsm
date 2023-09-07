@@ -1,96 +1,21 @@
 #! /usr/bin/env node
 
 import minimist from "minimist";
-import { defu } from "defu";
 
 import child_process from "node:child_process";
 import * as fs from "node:fs";
 import path from "path";
 
 import { isCI } from "ci-info";
-import { TConfig, TScript, ExtendConfig, TError, TFunction } from "./types";
+import { TScript, TError, TFunction } from "./types";
 import { printHelp } from "./help";
+import { loadConfig } from "./configLoader";
 
 const argv = minimist(process.argv.slice(2), { "--": true });
 
-const possibleConfigFiles: (string | undefined)[] = argv.config
-  ? [argv.config as string]
-  : [process.env.BSM_CONFIG, "./package.scripts.js", "./package.scripts.json"];
-
-const { config, file } =
-  possibleConfigFiles.reduce<{ config: TConfig; file: string } | undefined>(
-    (p, c) => {
-      if (p || !c) return p;
-      const config = loadConfig(c);
-      if (config) return { config, file: c };
-      return undefined;
-    },
-    undefined,
-  ) ?? {};
-process.env.BSM_CONFIG = file;
-
-const DEFAULT_CONFIG: TConfig = {
-  scripts: {},
-  config: {
-    allowFunction: false,
-  },
-};
-
-function loadConfig(p: ExtendConfig): TConfig | undefined {
-  if (!p) return undefined;
-  try {
-    let source = Array.isArray(p) ? p[0] : p;
-
-    source = require.resolve(source, {
-      paths: [process.cwd()],
-    });
-
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    let config = require(source) as TConfig | ((...args: unknown[]) => TConfig);
-    if (typeof config === "function") {
-      config = config(...(Array.isArray(p) ? p.slice(1) : []));
-    }
-
-    if (Object.hasOwn(config, "extends") && config.extends) {
-      const configs = [];
-      for (let extendsConfig of config.extends) {
-        const c = loadConfig(extendsConfig);
-
-        if (Array.isArray(extendsConfig)) extendsConfig = extendsConfig[0];
-        if (!c) {
-          console.error(
-            `\x1b[31mCannot find config '${extendsConfig}' to extend\x1b[0m`,
-          );
-          process.exit(1);
-        } else configs.push(c);
-      }
-
-      return defu(config, ...configs, DEFAULT_CONFIG);
-    } else {
-      return defu(config, DEFAULT_CONFIG);
-    }
-  } catch (e) {
-    // @ts-expect-error code is not defined in the node typings
-    if (e?.code === "MODULE_NOT_FOUND") return undefined;
-    console.error(e);
-
-    if (Array.isArray(p)) p = p[0];
-    console.error(`\x1b[31mError loading config '${p}'\x1b[0m`);
-    process.exit(1);
-  }
-}
+const config = loadConfig(argv);
 
 async function main() {
-  if (!config) {
-    console.error(
-      `\x1b[31mCannot find config ${possibleConfigFiles
-        .filter((s): s is string => s !== undefined)
-        .map((s) => `'${s}'`)
-        .join(" or ")}\x1b[0m`,
-    );
-    process.exit(1);
-  }
-
   printHelp(config, argv, argv.h);
   printHelp(config, argv, argv.help);
   printHelp(config, argv, argv._.length === 0);

@@ -1,5 +1,5 @@
 module.exports = {
-  extends: ["./test.js"],
+  extends: ["./test"],
   scripts: {
     build: {
       _default: {
