@@ -144,6 +144,7 @@ async function executeObject(
     } else if (script[0] === "*") {
       for (const key in context) {
         if (key.startsWith("_")) continue;
+        if (key.startsWith("$")) continue;
         if (Object.hasOwn(context, key)) {
           await runScript(context[key], script.slice(1), [...path, key], {
             ...options,

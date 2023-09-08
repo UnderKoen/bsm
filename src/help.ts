@@ -91,6 +91,7 @@ export function printCommands(
       printCommand(s, [...path, i.toString()]);
     });
   } else if (typeof script === "object") {
+    if (path.length > 0) printCommand(script, [...path]);
     for (const key in script) {
       if (Object.hasOwn(script, key)) {
         printCommand(script[key], [...path, key]);
@@ -107,6 +108,8 @@ export function printCommand(scripts: TScript | undefined, path: string[]) {
     return;
   }
 
+  if (path[path.length - 1] === "$description") return;
+
   const prefix = `\x1b[92m${path.join(".")}\x1b[90m - \x1b[0m`;
   let suffix: string;
   if (typeof scripts === "string") {
@@ -116,7 +119,11 @@ export function printCommand(scripts: TScript | undefined, path: string[]) {
   } else if (Array.isArray(scripts)) {
     suffix = `\x1b[90m[${scripts.length}]\x1b[0m`;
   } else {
-    suffix = `\x1b[90m{${Object.keys(scripts).join(", ")}}\x1b[0m`;
+    if (Object.hasOwn(scripts, "$description")) {
+      suffix = `\x1b[90m${scripts.$description as string}\x1b[0m`;
+    } else {
+      suffix = `\x1b[90m{${Object.keys(scripts).join(", ")}}\x1b[0m`;
+    }
   }
 
   console.log(`${prefix}${suffix}`);
