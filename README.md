@@ -492,6 +492,20 @@ bsm test
 
 The above command will execute `echo Hello World!`.
 
+## Trouble shooting
+
+### `Script '/home/runner' not found`
+
+When using a unix based OS, you might get the following error:
+
+```bash
+Script '{home}' not found
+```
+
+This is caused by the `~` prefix being expanded by the shell.
+You can fix this by using `bsm \~` instead of `bsm ~`.
+In version `1.0.1` and above we try to detect this and fix it automatically.
+
 ## Future plans
 
 - [ ] Have support for workspaces / lerna

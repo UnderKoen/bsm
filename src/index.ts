@@ -23,7 +23,10 @@ async function main() {
 
   addToPath(process.env, await getNpmBin());
 
-  for (const script of argv._) {
+  for (let script of argv._) {
+    // On Windows, you can't escape the tilde, so we have to do it for the user
+    script = script.replace(/^\\~/g, "~");
+
     if (script.startsWith("~") && process.env.BSM_PATH) {
       const prefix = process.env.BSM_PATH.split(".");
       const sub = getScript(config.scripts, prefix);

@@ -91,6 +91,9 @@ class Executor {
 
     if (context === "") return;
 
+    // Escape ~ for unix shells
+    context = context.replace(/bsm ~/g, "bsm \\~");
+
     return await new Promise((resolve, reject) => {
       const s = child_process.spawn(context, [], {
         stdio: "inherit",

@@ -18,6 +18,7 @@ module.exports = {
       packageJson: "prettier-package-json --write",
       eslint: "bsm lint.eslint -- --fix",
       prettier: "prettier --write .",
+      updateBsm: "npm i -D @under_koen/bsm@latest",
     },
     lint: {
       $description: "Run all linters",
