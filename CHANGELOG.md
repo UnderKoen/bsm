@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/UnderKoen/bsm/compare/v1.0.0...v1.0.1) (2023-09-09)
+
+
+### Bug Fixes
+
+* unescaped ~ caused problems ([3564b3e](https://github.com/UnderKoen/bsm/commit/3564b3e6a40217d42930386305584361ebe10e20))
+
 # 1.0.0 (2023-09-09)
 
 
