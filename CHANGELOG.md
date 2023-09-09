@@ -1,18 +1,6 @@
 # 1.0.0 (2023-09-09)
 
 
-### Bug Fixes
-
-* _post working again ([403e93e](https://github.com/UnderKoen/bsm/commit/403e93e65176990e9ef451fb78b18d039d15cdb0))
-* empty catch not working ([6702692](https://github.com/UnderKoen/bsm/commit/6702692a74de4bb4c7aab835048992a393c6d647))
-* error in package.scripts.js ([b856b6f](https://github.com/UnderKoen/bsm/commit/b856b6f7d954cf367e25410394017f4fc5e09792))
-* error when trying to execute an object without `_default` ([81260ba](https://github.com/UnderKoen/bsm/commit/81260ba6b517830337b7df8d59d1e47ba07f624f))
-* exit with the correct exit code ([d1fcc5f](https://github.com/UnderKoen/bsm/commit/d1fcc5f04d51de3e447bd9da9dad532aede60435))
-* **functions:** when returning nullish don't throw not executable error ([fe63677](https://github.com/UnderKoen/bsm/commit/fe636774240331bea37b4500e703989b04216372))
-* include args working ([5da7483](https://github.com/UnderKoen/bsm/commit/5da74834139c57c9f14a956e2bf7d39c9a512086))
-* with relative don't execute _pre and _post of parent ([78aaf0c](https://github.com/UnderKoen/bsm/commit/78aaf0c4d32124bc2997912c7e4dad265b6b22f8))
-
-
 ### Features
 
 * _catch errors ([2f3201b](https://github.com/UnderKoen/bsm/commit/2f3201bff01858be544b5323b69e92ee59ac058d))
@@ -34,13 +22,3 @@
 * scripts depending on os ([5e79e09](https://github.com/UnderKoen/bsm/commit/5e79e094a9e8dce373208875617fcc4b6a939629))
 * show function execution errors ([04d826a](https://github.com/UnderKoen/bsm/commit/04d826a4fcb1e49074c8a29fdcf9fe17e7906394))
 * wildcards ignore non executable scripts ([f6438a5](https://github.com/UnderKoen/bsm/commit/f6438a592671693ce55290db8dcc6b4f8f0c69a0))
-
-
-### Performance Improvements
-
-* use an single split ([f473d73](https://github.com/UnderKoen/bsm/commit/f473d7382dd0856421d6514f2cc1e0a35a095c5d))
-
-
-### Reverts
-
-* remove option to allow functions ([d20249e](https://github.com/UnderKoen/bsm/commit/d20249ed57d1329ff575c5fe79e67b942381d881))
