@@ -8,8 +8,8 @@ module.exports = {
         _default:
           "esbuild src/index.ts --bundle --platform=node --target=node16 --outfile=dist/index.js",
       },
-      prod: "bsm \\~ -- --minify",
-      dev: "bsm \\~ -- --sourcemap",
+      prod: "bsm ~ -- --minify",
+      dev: "bsm ~ -- --sourcemap",
       watch: "bsm ~.dev -- --watch",
     },
     prettier: {
@@ -18,7 +18,10 @@ module.exports = {
       packageJson: "prettier-package-json --write",
       eslint: "bsm lint.eslint -- --fix",
       prettier: "prettier --write .",
-      updateBsm: "npm i -D @under_koen/bsm@latest",
+      updateBsm: [
+        "npm i -D @under_koen/bsm@latest",
+        "npm up @under_koen/bsm --save",
+      ],
     },
     lint: {
       $description: "Run all linters",
@@ -28,7 +31,7 @@ module.exports = {
     },
     test: {
       _default: "uvu -r tsm test",
-      cov: "c8 bsm \\~",
+      cov: "c8 bsm ~",
     },
   },
 };
