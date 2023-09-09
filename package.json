@@ -20,6 +20,7 @@
     "dist"
   ],
   "scripts": {
+    "bsm": "bsm",
     "build": "bsm build.prod",
     "build:dev": "bsm build.dev",
     "build:watch": "bsm build.watch",
@@ -36,6 +37,7 @@
     "@types/sinon": "^10.0.16",
     "@typescript-eslint/eslint-plugin": "^6.6.0",
     "@typescript-eslint/parser": "^6.6.0",
+    "@under_koen/bsm": "^0.0.6",
     "c8": "^8.0.1",
     "ci-info": "^3.8.0",
     "defu": "^6.1.2",

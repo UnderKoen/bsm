@@ -8,8 +8,8 @@ module.exports = {
         _default:
           "esbuild src/index.ts --bundle --platform=node --target=node16 --outfile=dist/index.js",
       },
-      prod: "bsm ~ -- --minify",
-      dev: "bsm ~ -- --sourcemap",
+      prod: "bsm \\~ -- --minify",
+      dev: "bsm \\~ -- --sourcemap",
       watch: "bsm ~.dev -- --watch",
     },
     prettier: {
@@ -27,7 +27,7 @@ module.exports = {
     },
     test: {
       _default: "uvu -r tsm test",
-      cov: "c8 bsm ~",
+      cov: "c8 bsm \\~",
     },
   },
 };

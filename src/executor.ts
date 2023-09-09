@@ -68,7 +68,10 @@ class Executor {
       return;
     }
 
-    await Executor.runScript(result, script, path, options);
+    await Executor.runScript(result, script, path, {
+      ...options,
+      excludeArgs: true,
+    });
   }
 
   static async executeString(
