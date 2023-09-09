@@ -25,5 +25,9 @@ module.exports = {
       eslint: "eslint --ext .ts,.js .",
       prettier: "prettier --check .",
     },
+    test: {
+      _default: "uvu -r tsm test",
+      cov: "c8 bsm ~",
+    },
   },
 };

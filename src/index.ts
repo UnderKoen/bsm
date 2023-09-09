@@ -8,7 +8,7 @@ import path from "path";
 import { TScript, TError } from "./types";
 import { printHelp } from "./help";
 import { loadConfig } from "./configLoader";
-import { runScript } from "./executor";
+import { Executor } from "./executor";
 
 const argv = minimist(process.argv.slice(2), { "--": true });
 //TODO maybe not the cleanest way to do this
@@ -29,12 +29,12 @@ async function main() {
       const sub = getScript(config.scripts, prefix);
 
       if (sub) {
-        await runScript(sub, script.split(".").splice(1), prefix, {});
+        await Executor.runScript(sub, script.split(".").splice(1), prefix, {});
         continue;
       }
     }
 
-    await runScript(config.scripts, script.split("."), [], {});
+    await Executor.runScript(config.scripts, script.split("."), [], {});
   }
 }
 

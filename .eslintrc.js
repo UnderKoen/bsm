@@ -7,7 +7,7 @@ module.exports = {
   },
   overrides: [
     {
-      files: ["./src/**/*"],
+      files: ["./**/*.ts"],
       parserOptions: {
         ecmaVersion: "latest",
         sourceType: "script",

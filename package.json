@@ -20,17 +20,23 @@
     "dist"
   ],
   "scripts": {
-    "build": "bsm build",
+    "build": "bsm build.prod",
     "build:dev": "bsm build.dev",
     "build:watch": "bsm build.watch",
     "prettier": "bsm prettier",
     "prepublishOnly": "bsm build.prod"
   },
   "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/exec": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^8.0.7",
     "@types/minimist": "^1.2.2",
     "@types/node": "^20.5.9",
+    "@types/sinon": "^10.0.16",
     "@typescript-eslint/eslint-plugin": "^6.6.0",
     "@typescript-eslint/parser": "^6.6.0",
+    "c8": "^8.0.1",
     "ci-info": "^3.8.0",
     "defu": "^6.1.2",
     "esbuild": "^0.19.2",
@@ -39,7 +45,11 @@
     "minimist": "^1.2.8",
     "prettier": "3.0.3",
     "prettier-package-json": "^2.8.0",
-    "typescript": "^5.2.2"
+    "semantic-release": "^21.0.1",
+    "sinon": "^15.2.0",
+    "tsm": "^2.3.0",
+    "typescript": "^5.2.2",
+    "uvu": "^0.5.6"
   },
   "keywords": [
     "script",
