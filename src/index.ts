@@ -19,7 +19,8 @@ const config = loadConfig(argv);
 async function main() {
   printHelp(config, argv, argv.h);
   printHelp(config, argv, argv.help);
-  printHelp(config, argv, argv._.length === 0);
+
+  handleNoArgs();
 
   addToPath(process.env, await getNpmBin());
 
@@ -39,6 +40,18 @@ async function main() {
 
     await Executor.runScript(config.scripts, script.split("."), [], {});
   }
+}
+
+function handleNoArgs() {
+  if (argv._.length > 0) return;
+
+  const event = process.env.npm_lifecycle_event;
+  if (event && event !== "npx") {
+    argv._ = [event.replaceAll(":", ".")];
+    return;
+  }
+
+  printHelp(config, argv, true);
 }
 
 function addToPath(env: NodeJS.ProcessEnv, path: string | null): void {

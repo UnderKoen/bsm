@@ -33,5 +33,8 @@ module.exports = {
       _default: "uvu -r tsm test",
       cov: "c8 bsm ~",
     },
+    env: () => {
+      console.log(process.env);
+    },
   },
 };

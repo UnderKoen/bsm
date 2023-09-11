@@ -20,11 +20,12 @@
     "dist"
   ],
   "scripts": {
-    "bsm": "bsm",
-    "build": "bsm build.prod",
-    "build:dev": "bsm build.dev",
-    "build:watch": "bsm build.watch",
-    "prettier": "bsm prettier",
+    "build": "bsm",
+    "build:dev": "bsm",
+    "build:prod": "bsm",
+    "build:watch": "bsm",
+    "prettier": "bsm",
+    "lint": "bsm",
     "prepublishOnly": "bsm build.prod"
   },
   "devDependencies": {
