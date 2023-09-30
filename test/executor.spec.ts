@@ -147,6 +147,45 @@ executeFunctionSuite("error should not contain BSM stack trace", async () => {
   }
 });
 
+executeFunctionSuite(
+  "should set environment variables only during function execution",
+  async () => {
+    // Arrange
+    const context = sinon.stub().returns(undefined);
+
+    // Act
+    await Executor.executeFunction(context, [], [], {
+      env: {
+        TEST: "test",
+      },
+    });
+
+    // Assert
+    assert.equal(context.callCount, 1);
+    assert.equal(process.env.TEST, undefined);
+  },
+);
+
+executeFunctionSuite("should set environment variables", async () => {
+  // Arrange
+  const context = sinon
+    .stub()
+    .callsFake(() => {
+      assert.equal(process.env.TEST, "test69");
+    })
+    .returns(undefined);
+
+  // Act
+  await Executor.executeFunction(context, [], [], {
+    env: {
+      TEST: "test69",
+    },
+  });
+
+  // Assert
+  assert.equal(context.callCount, 1);
+});
+
 executeFunctionSuite.run();
 // endregion
 
@@ -215,6 +254,22 @@ executeStringSuite("should throw error on non-zero exit code", async () => {
     assert.equal(error.code, 1);
     assert.equal(error.script, "path.test.fail");
   }
+});
+
+executeStringSuite("should run with environment variables", async () => {
+  // Arrange
+  const spawn = sinon.stub(child_process, "spawn").returns(spawnMock(0));
+
+  // Act
+  await Executor.executeString("test", [], [], {
+    env: {
+      TEST: "test",
+    },
+  });
+
+  // Assert
+  assert.equal(spawn.callCount, 1);
+  assert.equal(spawn.args[0][2].env?.["TEST"], "test");
 });
 
 executeStringSuite.run();
@@ -859,6 +914,89 @@ runObjectSuite("_{os} should take precedence over _default", async () => {
 
 runObjectSuite.run();
 // endregion
+
+// region executeObject() - $env
+const envSuite = suite("executeObject() - $env");
+
+envSuite("should set environment variables", async () => {
+  // Arrange
+  const runScript = sinon.stub(Executor, "runScript");
+
+  // Act
+  await Executor.executeObject(
+    {
+      $env: {
+        TEST: "test",
+      },
+      _default: "",
+    },
+    [],
+    [],
+    {},
+  );
+
+  // Assert
+  assert.equal(runScript.callCount, 1);
+  assert.equal(runScript.args[0][3].env?.["TEST"], "test");
+});
+
+envSuite("should override environment variables", async () => {
+  // Arrange
+  const runScript = sinon.stub(Executor, "runScript");
+
+  // Act
+  await Executor.executeObject(
+    {
+      $env: {
+        TEST: "test",
+      },
+      _default: "",
+    },
+    [],
+    [],
+    {
+      env: {
+        TEST: "test2",
+      },
+    },
+  );
+
+  // Assert
+  assert.equal(runScript.callCount, 1);
+  assert.equal(runScript.args[0][3].env?.["TEST"], "test");
+});
+
+envSuite("should not override environment variables", async () => {
+  // Arrange
+  const runScript = sinon.stub(Executor, "runScript");
+
+  // Act
+  await Executor.executeObject(
+    {
+      $env: {
+        TEST: "test",
+      },
+      _default: "",
+    },
+    [],
+    [],
+    {
+      env: {
+        TEST: "test2",
+        IGNORE: "ignore",
+      },
+    },
+  );
+
+  // Assert
+  assert.equal(runScript.callCount, 1);
+  assert.equal(runScript.args[0][3].env?.["TEST"], "test");
+  assert.equal(runScript.args[0][3].env?.["IGNORE"], "ignore");
+});
+
+envSuite.run();
+// endregion
+
 // endregion
 
 // region runScript()

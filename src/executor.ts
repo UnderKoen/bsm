@@ -5,6 +5,7 @@ import { isCI } from "ci-info";
 type Options = {
   excludeArgs?: true;
   ignoreNotFound?: true;
+  env?: Record<string, string>;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
@@ -49,7 +50,13 @@ class Executor {
     );
 
     let result: TScript | undefined;
+    const oldEnv = process.env;
     try {
+      process.env = {
+        ...process.env,
+        ...options.env,
+      };
+
       result = (await context.call(null, process.argv)) as TScript | undefined;
     } catch (e) {
       if (e instanceof Error) {
@@ -61,6 +68,8 @@ class Executor {
         function: e,
         script: path.join("."),
       } as TError;
+    } finally {
+      process.env = oldEnv;
     }
 
     if (result == undefined) {
@@ -100,6 +109,7 @@ class Executor {
         shell: true,
         env: {
           ...process.env,
+          ...options.env,
           BSM_PATH: path.slice(0, -1).join("."),
           BSM_SCRIPT: path.join("."),
         },
@@ -160,6 +170,13 @@ class Executor {
     options: Options,
   ): Promise<void> {
     try {
+      if (Object.hasOwn(context, "$env")) {
+        options.env = {
+          ...options.env,
+          ...Executor.getEnv(context["$env"]),
+        };
+      }
+
       //TODO don't execute when command is not found
       await Executor.executeHook(context, "_pre", path, options);
 
@@ -207,6 +224,18 @@ class Executor {
     } finally {
       await Executor.executeHook(context, "_finally", path, options);
     }
+  }
+
+  static getEnv(context: TScript): Record<string, string> {
+    if (typeof context === "string") {
+      //TODO get env from file
+    } else if (typeof context === "object") {
+      if (!Array.isArray(context)) {
+        return context as Record<string, string>;
+      }
+    }
+
+    return {};
   }
 
   static async executeHook(

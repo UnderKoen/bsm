@@ -88,6 +88,25 @@ module.exports = {
           _default: 'echo "pre test"',
         },
       },
+      env: {
+        $env: {
+          test: "true",
+          global: "123",
+        },
+        _default: () => {
+          console.log(process.env.test);
+          console.log(process.env.global);
+        },
+        overrides: {
+          $env: {
+            test: "false",
+          },
+          _default: () => {
+            console.log(process.env.test);
+            console.log(process.env.global);
+          },
+        },
+      },
     },
   },
 };
