@@ -26,6 +26,8 @@
     "build:watch": "bsm",
     "prettier": "bsm",
     "lint": "bsm",
+    "test": "bsm",
+    "test:cov": "bsm test.cov",
     "prepublishOnly": "bsm build.prod"
   },
   "devDependencies": {
