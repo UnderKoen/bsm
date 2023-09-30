@@ -1,3 +1,11 @@
+# [1.1.0](https://github.com/UnderKoen/bsm/compare/v1.0.1...v1.1.0) (2023-09-30)
+
+
+### Features
+
+* package.json doesn't require arguments. ([573e815](https://github.com/UnderKoen/bsm/commit/573e815854462c3609a4cb8962770456eecfc816))
+* simple `$env` functionality ([02bf875](https://github.com/UnderKoen/bsm/commit/02bf87510b3f71e6408d6025d1d483263107137a))
+
 ## [1.0.1](https://github.com/UnderKoen/bsm/compare/v1.0.0...v1.0.1) (2023-09-09)
 
 
