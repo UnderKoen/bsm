@@ -1,6 +1,7 @@
 import { TError, TFunction, TScript, TScripts } from "./types";
 import child_process from "node:child_process";
 import { isCI } from "ci-info";
+import { printCommand, printCommands } from "./help";
 
 type Options = {
   excludeArgs?: true;
@@ -31,9 +32,38 @@ class Executor {
     }
   }
 
-  static notFound(path: string[], options: Options): never | void {
+  static notFound(
+    path: string[],
+    options: Options,
+    context?: TScripts,
+  ): never | void {
     if (options.ignoreNotFound) return;
-    console.error(`\x1b[31mScript '${path.join(".")}' not found\x1b[0m`);
+
+    if (context) {
+      const sub = path[path.length - 1];
+      const rest = path.slice(0, -1);
+
+      if (rest.length === 0) {
+        console.error(`\x1b[31mScript '${sub}' does not exist\x1b[0m\n`);
+      } else {
+        console.error(
+          `\x1b[31mScript '${rest.join(
+            ".",
+          )}' does not have a '${sub}' script\x1b[0m\n`,
+        );
+      }
+
+      if (Object.hasOwn(context, "$description")) {
+        printCommand(context, rest);
+        console.log();
+      }
+
+      console.log(`\x1b[1mTry one of the following:\x1b[0m`);
+
+      printCommands(context, rest, false);
+    } else {
+      console.error(`\x1b[31mScript '${path.join(".")}' not found\x1b[0m`);
+    }
     process.exit(127);
   }
 
@@ -208,7 +238,7 @@ class Executor {
             options,
           );
         } else {
-          return Executor.notFound([...path, sub], options);
+          return Executor.notFound([...path, sub], options, context);
         }
       }
 
@@ -281,7 +311,7 @@ class Executor {
         options,
       );
     } else {
-      Executor.notFound(path, options);
+      Executor.notFound([...path, "_default"], options, context);
     }
   }
 }

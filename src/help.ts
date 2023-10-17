@@ -85,13 +85,14 @@ export function printHelp(
 export function printCommands(
   script: TScript | undefined,
   path: string[] = [],
+  printSelf = true,
 ) {
   if (Array.isArray(script)) {
     script.forEach((s, i) => {
       printCommand(s, [...path, i.toString()]);
     });
   } else if (typeof script === "object") {
-    if (path.length > 0) printCommand(script, [...path]);
+    if (printSelf && path.length > 0) printCommand(script, [...path]);
     for (const key in script) {
       if (Object.hasOwn(script, key)) {
         printCommand(script[key], [...path, key]);
