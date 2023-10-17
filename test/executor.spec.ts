@@ -4,6 +4,12 @@ import { Executor } from "../src/executor";
 import sinon from "sinon";
 import child_process from "node:child_process";
 import { TError } from "../src/types";
+import { Help } from "../src/help";
+
+sinon.restore();
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+let consoleLog = sinon.stub(console, "log");
+let consoleError = sinon.stub(console, "error");
 
 function suite(name: string): ReturnType<typeof _suite> {
   const test = _suite(name);
@@ -11,8 +17,8 @@ function suite(name: string): ReturnType<typeof _suite> {
     sinon.restore();
 
     // Don't output anything
-    sinon.stub(console, "log");
-    sinon.stub(console, "error");
+    consoleLog = sinon.stub(console, "log");
+    consoleError = sinon.stub(console, "error");
     process.argv = [];
   });
   return test;
@@ -50,6 +56,75 @@ notFoundSuite("with ignoreNotFound option should not exit", () => {
 
   // Assert
   assert.equal(exit.callCount, 0);
+});
+
+notFoundSuite("with no options should print error", () => {
+  // Arrange
+  sinon.stub(process, "exit");
+
+  // Act
+  Executor.notFound(["test"], {});
+
+  // Assert
+  assert.equal(consoleError.callCount, 1);
+  assert.match(consoleError.args[0][0] as string, "Script 'test' not found");
+});
+
+notFoundSuite("with context should print subscripts", () => {
+  // Arrange
+  sinon.stub(process, "exit");
+  const printCommand = sinon.stub(Help, "printCommand");
+  const printCommands = sinon.stub(Help, "printCommands");
+
+  // Act
+  Executor.notFound(["wow", "test"], {}, { r: "test" });
+
+  // Assert
+  assert.equal(consoleError.callCount, 1);
+  assert.match(
+    consoleError.args[0][0] as string,
+    "Script 'wow' does not have a 'test' script",
+  );
+  assert.equal(printCommand.callCount, 0);
+  assert.equal(printCommands.callCount, 1);
+});
+
+notFoundSuite("with context should print description", () => {
+  // Arrange
+  sinon.stub(process, "exit");
+  const printCommand = sinon.stub(Help, "printCommand");
+  const printCommands = sinon.stub(Help, "printCommands");
+
+  // Act
+  Executor.notFound(["wow", "test"], {}, { r: "test", $description: "desc" });
+
+  // Assert
+  assert.equal(consoleError.callCount, 1);
+  assert.match(
+    consoleError.args[0][0] as string,
+    "Script 'wow' does not have a 'test' script",
+  );
+  assert.equal(printCommand.callCount, 1);
+  assert.equal(printCommands.callCount, 1);
+});
+
+notFoundSuite("with context root should not say does not have", () => {
+  // Arrange
+  sinon.stub(process, "exit");
+  const printCommand = sinon.stub(Help, "printCommand");
+  const printCommands = sinon.stub(Help, "printCommands");
+
+  // Act
+  Executor.notFound(["test"], {}, { r: "test" });
+
+  // Assert
+  assert.equal(consoleError.callCount, 1);
+  assert.match(
+    consoleError.args[0][0] as string,
+    "Script 'test' does not exist",
+  );
+  assert.equal(printCommand.callCount, 0);
+  assert.equal(printCommands.callCount, 1);
 });
 
 notFoundSuite.run();

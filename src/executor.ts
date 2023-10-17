@@ -1,7 +1,7 @@
 import { TError, TFunction, TScript, TScripts } from "./types";
 import child_process from "node:child_process";
 import { isCI } from "ci-info";
-import { printCommand, printCommands } from "./help";
+import { Help } from "./help";
 
 type Options = {
   excludeArgs?: true;
@@ -54,13 +54,13 @@ class Executor {
       }
 
       if (Object.hasOwn(context, "$description")) {
-        printCommand(context, rest);
+        Help.printCommand(context, rest);
         console.log();
       }
 
       console.log(`\x1b[1mTry one of the following:\x1b[0m`);
 
-      printCommands(context, rest, false);
+      Help.printCommands(context, rest, false);
     } else {
       console.error(`\x1b[31mScript '${path.join(".")}' not found\x1b[0m`);
     }

@@ -6,7 +6,7 @@ import * as fs from "node:fs";
 import path from "path";
 
 import { TScript, TError } from "./types";
-import { printHelp } from "./help";
+import { Help } from "./help";
 import { loadConfig } from "./configLoader";
 import { Executor } from "./executor";
 
@@ -17,8 +17,8 @@ process.argv = argv["--"] ?? [];
 const config = loadConfig(argv);
 
 async function main() {
-  printHelp(config, argv, argv.h);
-  printHelp(config, argv, argv.help);
+  Help.printHelp(config, argv, argv.h);
+  Help.printHelp(config, argv, argv.help);
 
   handleNoArgs();
 
@@ -51,7 +51,7 @@ function handleNoArgs() {
     return;
   }
 
-  printHelp(config, argv, true);
+  Help.printHelp(config, argv, true);
 }
 
 function addToPath(env: NodeJS.ProcessEnv, path: string | null): void {
