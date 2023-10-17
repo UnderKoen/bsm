@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/UnderKoen/bsm/compare/v1.1.0...v1.1.1) (2023-10-17)
+
+
+### Bug Fixes
+
+* more verbose help when script/subscript not found. ([a0a953e](https://github.com/UnderKoen/bsm/commit/a0a953e6cb74bfe06ee8f6bd7d0f993bee6a5613))
+
 # [1.1.0](https://github.com/UnderKoen/bsm/compare/v1.0.1...v1.1.0) (2023-09-30)
 
 
