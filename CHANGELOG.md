@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/UnderKoen/bsm/compare/v1.1.1...v1.2.0) (2023-10-26)
+
+
+### Features
+
+* $env `file:./.env` support ([fecbf55](https://github.com/UnderKoen/bsm/commit/fecbf555bda95bc28ce02ed2492b7ad76a8a97bd))
+
 ## [1.1.1](https://github.com/UnderKoen/bsm/compare/v1.1.0...v1.1.1) (2023-10-17)
 
 
