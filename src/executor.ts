@@ -2,6 +2,8 @@ import { TError, TFunction, TScript, TScripts } from "./types";
 import child_process from "node:child_process";
 import { isCI } from "ci-info";
 import { Help } from "./help";
+import path from "path";
+import * as fs from "fs";
 
 type Options = {
   excludeArgs?: true;
@@ -258,6 +260,31 @@ class Executor {
 
   static getEnv(context: TScript): Record<string, string> {
     if (typeof context === "string") {
+      if (context.startsWith("file:")) {
+        // Maybe have an option for static file instead of cws
+        const file = path.join(process.cwd(), context.slice(5));
+
+        const content = fs.readFileSync(file, "utf-8");
+
+        // remove comments and blank lines
+        const lines = content.split("\n").filter((line) => {
+          return !line.startsWith("#") && line.trim() !== "";
+        });
+
+        const env: Record<string, string> = {};
+
+        for (const line of lines) {
+          const regex = /^([^=]+)=(['"])?(.+)\2$/g;
+          const match = regex.exec(line);
+
+          if (match) {
+            env[match[1]] = match[3];
+          }
+        }
+
+        return env;
+      }
+
       //TODO get env from file
     } else if (typeof context === "object") {
       if (!Array.isArray(context)) {
