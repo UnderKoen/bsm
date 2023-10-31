@@ -131,6 +131,16 @@ class Help {
 
     console.log(`${prefix}${suffix}`);
   }
+
+  static printVersion(): void {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const packageJson = require("../package.json") as {
+      version: string;
+    };
+
+    console.log(`${packageJson.version}`);
+    process.exit(0);
+  }
 }
 
 export { Help };

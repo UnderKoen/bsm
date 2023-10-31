@@ -17,6 +17,10 @@ process.argv = argv["--"] ?? [];
 const config = loadConfig(argv);
 
 async function main() {
+  if (argv["version"]) {
+    Help.printVersion();
+  }
+
   Help.printHelp(config, argv, argv.h);
   Help.printHelp(config, argv, argv.help);
 
