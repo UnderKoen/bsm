@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/UnderKoen/bsm/compare/v1.2.0...v1.2.1) (2023-10-31)
+
+
+### Bug Fixes
+
+* add --version argument for improved debugging ([7027260](https://github.com/UnderKoen/bsm/commit/70272600616e8c27e6bd3e53bd94c0b0c281a724))
+
 # [1.2.0](https://github.com/UnderKoen/bsm/compare/v1.1.1...v1.2.0) (2023-10-26)
 
 
