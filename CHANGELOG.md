@@ -1,3 +1,10 @@
+## [1.2.3](https://github.com/UnderKoen/bsm/compare/v1.2.2...v1.2.3) (2023-11-01)
+
+
+### Bug Fixes
+
+* windows \r breaking regex ([1bfa3e1](https://github.com/UnderKoen/bsm/commit/1bfa3e138ad71ae3ad7b8b015bfd4c88ad7a6537))
+
 ## [1.2.2](https://github.com/UnderKoen/bsm/compare/v1.2.1...v1.2.2) (2023-11-01)
 
 
