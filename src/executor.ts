@@ -271,7 +271,7 @@ class Executor {
           );
           return {};
         }
-        const content = fs.readFileSync(file, "utf-8");
+        const content = fs.readFileSync(file, "utf-8").replaceAll("\r", "");
 
         // remove comments and blank lines
         const lines = content.split("\n").filter((line) => {
