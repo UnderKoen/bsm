@@ -1,3 +1,10 @@
+## [1.2.2](https://github.com/UnderKoen/bsm/compare/v1.2.1...v1.2.2) (2023-11-01)
+
+
+### Bug Fixes
+
+* env file not found ([1db5e68](https://github.com/UnderKoen/bsm/commit/1db5e68c20ec371fc78543f5ad12083127573829))
+
 ## [1.2.1](https://github.com/UnderKoen/bsm/compare/v1.2.0...v1.2.1) (2023-10-31)
 
 
