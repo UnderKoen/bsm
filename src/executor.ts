@@ -264,6 +264,13 @@ class Executor {
         // Maybe have an option for static file instead of cws
         const file = path.join(process.cwd(), context.slice(5));
 
+        if (!fs.existsSync(file)) {
+          console.error(
+            `\x1b[31mFile '${file}' does not exist\x1b[0m\n` +
+              "\x1b[1mRunning script without these environment variables\x1b[0m\n",
+          );
+          return {};
+        }
         const content = fs.readFileSync(file, "utf-8");
 
         // remove comments and blank lines
