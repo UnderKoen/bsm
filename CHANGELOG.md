@@ -1,3 +1,10 @@
+## [1.2.4](https://github.com/UnderKoen/bsm/compare/v1.2.3...v1.2.4) (2023-11-06)
+
+
+### Bug Fixes
+
+* \n in quoted env values not escaped ([27d29ee](https://github.com/UnderKoen/bsm/commit/27d29eeb133cd2cec9afce05887d82a7ce89c113))
+
 ## [1.2.3](https://github.com/UnderKoen/bsm/compare/v1.2.2...v1.2.3) (2023-11-01)
 
 
