@@ -90,12 +90,12 @@ module.exports = {
       },
       env: {
         $env: {
-          test: "true",
-          global: "123",
+          TEST: "true",
+          GLOBAL: "123",
         },
         _default: () => {
-          console.log(process.env.test);
-          console.log(process.env.global);
+          console.log(process.env.TEST);
+          console.log(process.env.GLOBAL);
         },
         overrides: {
           $env: {
@@ -104,6 +104,16 @@ module.exports = {
           _default: () => {
             console.log(process.env.test);
             console.log(process.env.global);
+          },
+        },
+        file: {
+          $env: "file:test.env",
+          _default: () => {
+            console.log(process.env.TEST);
+            console.log(process.env.UNMATCH_QUOTE);
+            console.log(process.env.NEW_LINE_NO_QUOTES);
+            console.log(process.env.NEW_LINE_SINGLE_QUOTE);
+            console.log(process.env.NEW_LINE_DOUBLE_QUOTE);
           },
         },
       },

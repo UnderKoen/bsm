@@ -285,7 +285,18 @@ class Executor {
           const match = regex.exec(line);
 
           if (match) {
-            env[match[1]] = match[3];
+            let value = match[3];
+            const quote = match[2];
+
+            if (quote === '"') {
+              value = value
+                .replaceAll(/(?<=(?<!\\)(\\\\)*)\\n/g, "\n")
+                .replaceAll(/(?<=(?<!\\)(\\\\)*)\\t/g, "\t")
+                .replaceAll(/(?<=(?<!\\)(\\\\)*)\\r/g, "\r")
+                .replaceAll(/(?<=(?<!\\)(\\\\)*)\\\\/g, "\\");
+            }
+
+            env[match[1]] = value;
           }
         }
 
