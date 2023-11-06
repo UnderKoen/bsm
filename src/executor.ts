@@ -3,7 +3,7 @@ import child_process from "node:child_process";
 import { isCI } from "ci-info";
 import { Help } from "./help";
 import path from "path";
-import * as fs from "fs";
+import fs from "fs";
 
 type Options = {
   excludeArgs?: true;
@@ -301,16 +301,32 @@ class Executor {
         }
 
         return env;
+      } else {
+        //TODO: support for other formats
+        console.error(
+          "\x1b[31mCurrently only file: is supported for environment variables\x1b[0m\n",
+        );
       }
-
-      //TODO get env from file
     } else if (typeof context === "object") {
       if (!Array.isArray(context)) {
         return context as Record<string, string>;
+      } else {
+        let env: Record<string, string> = {};
+        for (const el of context) {
+          env = {
+            ...env,
+            ...Executor.getEnv(el),
+          };
+        }
+        return env;
       }
-    }
+    } else {
+      // Function
+      const env = context.call(null, process.argv) as TScript | undefined;
+      if (env === undefined) return {};
 
-    return {};
+      return Executor.getEnv(env);
+    }
   }
 
   static async executeHook(

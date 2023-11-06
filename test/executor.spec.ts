@@ -5,6 +5,7 @@ import sinon from "sinon";
 import child_process from "node:child_process";
 import { TError } from "../src/types";
 import { Help } from "../src/help";
+import fs from "fs";
 
 sinon.restore();
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -31,6 +32,178 @@ const spawnMock = (code: number) => {
     },
   } as unknown as child_process.ChildProcessWithoutNullStreams;
 };
+
+//region getEnv()
+const getEnvSuite = suite("getEnv()");
+
+getEnvSuite("should return the same object", () => {
+  // Arrange
+  const env = { TEST: "test" };
+
+  // Act
+  const result = Executor.getEnv(env);
+
+  // Assert
+  assert.equal(result, env);
+});
+
+getEnvSuite("should return from file", () => {
+  // Arrange
+  sinon.stub(fs, "existsSync").returns(true);
+  sinon.stub(fs, "readFileSync").returns("TEST2=test2");
+
+  // Act
+  const result = Executor.getEnv("file:.env");
+
+  // Assert
+  assert.equal(result, { TEST2: "test2" });
+});
+
+getEnvSuite("should return from file (multiple)", () => {
+  // Arrange
+  sinon.stub(fs, "existsSync").returns(true);
+  sinon.stub(fs, "readFileSync").returns("TEST2=test2\nTEST3=test3");
+
+  // Act
+  const result = Executor.getEnv("file:.env");
+
+  // Assert
+  assert.equal(result, { TEST2: "test2", TEST3: "test3" });
+});
+
+getEnvSuite("should remove comments", () => {
+  // Arrange
+  sinon.stub(fs, "existsSync").returns(true);
+  sinon.stub(fs, "readFileSync").returns("TEST2=test2\n#comment=test3");
+
+  // Act
+  const result = Executor.getEnv("file:.env");
+
+  // Assert
+  assert.equal(result, { TEST2: "test2" });
+});
+
+getEnvSuite("should remove surrounded quotes (')", () => {
+  // Arrange
+  sinon.stub(fs, "existsSync").returns(true);
+  sinon.stub(fs, "readFileSync").returns("TEST2='test2'");
+
+  // Act
+  const result = Executor.getEnv("file:.env");
+
+  // Assert
+  assert.equal(result, { TEST2: "test2" });
+});
+
+getEnvSuite('should remove surrounded quotes (")', () => {
+  // Arrange
+  sinon.stub(fs, "existsSync").returns(true);
+  sinon.stub(fs, "readFileSync").returns('TEST2="test2"');
+
+  // Act
+  const result = Executor.getEnv("file:.env");
+
+  // Assert
+  assert.equal(result, { TEST2: "test2" });
+});
+
+getEnvSuite('should unescape characters (")', () => {
+  // Arrange
+  sinon.stub(fs, "existsSync").returns(true);
+  const actual = "test \\\\\\\\n \\\\ \\\t \\\\t \\ \n";
+  sinon
+    .stub(fs, "readFileSync")
+    .returns(
+      `TEST2="${actual}"`
+        .replaceAll("\\", "\\\\")
+        .replaceAll("\n", "\\n")
+        .replaceAll("\t", "\\t"),
+    );
+
+  // Act
+  const result = Executor.getEnv("file:.env");
+
+  // Assert
+  assert.equal(result, { TEST2: actual });
+});
+
+getEnvSuite("should not unescape characters (')", () => {
+  // Arrange
+  sinon.stub(fs, "existsSync").returns(true);
+  const actual = "test \\n \\t \\\\t";
+  sinon.stub(fs, "readFileSync").returns(`TEST2='${actual}'`);
+
+  // Act
+  const result = Executor.getEnv("file:.env");
+
+  // Assert
+  assert.equal(result, { TEST2: actual });
+});
+
+getEnvSuite("should log error if file does not exist", () => {
+  // Arrange
+  sinon.stub(fs, "existsSync").returns(false);
+
+  // Act
+  Executor.getEnv("file:.env");
+
+  // Assert
+  assert.equal(consoleError.callCount, 1);
+  assert.match(consoleError.args[0][0] as string, ".env' does not exist");
+});
+
+getEnvSuite("should overwrite if array", () => {
+  // Arrange
+  const env = { TEST: "test" };
+
+  // Act
+  const result = Executor.getEnv([env, { TEST: ["test2"] }]);
+
+  // Assert
+  assert.equal(result, { TEST: ["test2"] });
+});
+
+getEnvSuite("should execute function", () => {
+  // Arrange
+  const env = { TEST: "test" };
+  const context = sinon.stub().returns(env);
+
+  // Act
+  const result = Executor.getEnv(context);
+
+  // Assert
+  assert.equal(result, env);
+  assert.equal(context.callCount, 1);
+});
+
+getEnvSuite("should return empty if function is void", () => {
+  // Arrange
+  const context = sinon.stub().returns(undefined);
+
+  // Act
+  const result = Executor.getEnv(context);
+
+  // Assert
+  assert.equal(result, {});
+  assert.equal(context.callCount, 1);
+});
+
+getEnvSuite("should log error if unknown string", () => {
+  // Arrange
+
+  // Act
+  Executor.getEnv("unknown");
+
+  // Assert
+  assert.equal(consoleError.callCount, 1);
+  assert.match(
+    consoleError.args[0][0] as string,
+    "Currently only file: is supported for environment variables",
+  );
+});
+
+getEnvSuite.run();
+//endregion
 
 // region notFound()
 const notFoundSuite = suite("notFound()");

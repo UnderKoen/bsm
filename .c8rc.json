@@ -1,4 +1,7 @@
 {
   "include": "src",
-  "check-coverage": true
+  "check-coverage": true,
+  "branches": 95,
+  "statements": 90,
+  "lines": 85
 }
