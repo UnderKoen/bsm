@@ -1,3 +1,10 @@
+## [1.2.5](https://github.com/UnderKoen/bsm/compare/v1.2.4...v1.2.5) (2023-11-09)
+
+
+### Bug Fixes
+
+* when script file has a module not found print error ([534b95f](https://github.com/UnderKoen/bsm/commit/534b95f5a0045717a167896362cd1178e5653a74))
+
 ## [1.2.4](https://github.com/UnderKoen/bsm/compare/v1.2.3...v1.2.4) (2023-11-06)
 
 
