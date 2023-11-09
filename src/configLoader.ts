@@ -47,7 +47,8 @@ function loadFile(
     return defu(config, ...configs, DEFAULT_CONFIG);
   } catch (e) {
     // @ts-expect-error code is not defined in the node typings
-    if (e?.code === "MODULE_NOT_FOUND") {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    if (e?.code === "MODULE_NOT_FOUND" && e.requireStack?.length === 1) {
       if (noBail) return undefined;
 
       console.error(`\x1b[31mCannot find config '${source}' to extend\x1b[0m`);

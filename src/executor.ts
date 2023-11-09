@@ -306,6 +306,8 @@ class Executor {
         console.error(
           "\x1b[31mCurrently only file: is supported for environment variables\x1b[0m\n",
         );
+
+        return {};
       }
     } else if (typeof context === "object") {
       if (!Array.isArray(context)) {
