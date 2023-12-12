@@ -1,9 +1,11 @@
 import { TError, TFunction, TScript, TScripts } from "./types";
 import child_process from "node:child_process";
 import { isCI } from "ci-info";
-import { Help } from "./help";
+import { Help } from "./Help";
 import path from "path";
 import fs from "fs";
+import { Interactive } from "./Interactive";
+import { ConfigLoader } from "./ConfigLoader";
 
 type Options = {
   excludeArgs?: true;
@@ -11,8 +13,12 @@ type Options = {
   env?: Record<string, string>;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 class Executor {
+  static async run(script: string): Promise<void> {
+    const config = ConfigLoader.config;
+    await Executor.runScript(config.scripts, script.split("."), [], {});
+  }
+
   static async runScript(
     context: TScript,
     script: string[],
@@ -30,15 +36,17 @@ class Executor {
         await Executor.executeObject(context, script, path, options);
       }
     } else {
-      Executor.notFound(path, options);
+      // TODO support for other types
+      // TODO improve not found message
+      await Executor.notFound(path, options);
     }
   }
 
-  static notFound(
+  static async notFound(
     path: string[],
     options: Options,
-    context?: TScripts,
-  ): never | void {
+    context?: TScripts | TScript[],
+  ): Promise<void> {
     if (options.ignoreNotFound) return;
 
     if (context) {
@@ -46,23 +54,34 @@ class Executor {
       const rest = path.slice(0, -1);
 
       if (rest.length === 0) {
-        console.error(`\x1b[31mScript '${sub}' does not exist\x1b[0m\n`);
+        console.error(`\x1b[31mScript '${sub}' does not exist\x1b[0m`);
       } else {
         console.error(
           `\x1b[31mScript '${rest.join(
             ".",
-          )}' does not have a '${sub}' script\x1b[0m\n`,
+          )}' does not have a '${sub}' script\x1b[0m`,
         );
       }
 
-      if (Object.hasOwn(context, "$description")) {
-        Help.printCommand(context, rest);
+      if (ConfigLoader.config.config?.defaultHelpBehavior === "interactive") {
+        const scripts = await Interactive.selectScript(ConfigLoader.config, {
+          _: [path.join(".")],
+        });
+
+        //TODO: support for multiple scripts (currently Interactive only supports one)
+        await this.run(scripts[0]);
+        process.exit(0);
+      } else {
         console.log();
+        if (Object.hasOwn(context, "$description")) {
+          Help.printCommand(context, rest);
+          console.log();
+        }
+
+        console.log(`\x1b[1mTry one of the following:\x1b[0m`);
+
+        Help.printCommands(context, rest, false);
       }
-
-      console.log(`\x1b[1mTry one of the following:\x1b[0m`);
-
-      Help.printCommands(context, rest, false);
     } else {
       console.error(`\x1b[31mScript '${path.join(".")}' not found\x1b[0m`);
     }
@@ -105,7 +124,9 @@ class Executor {
     }
 
     if (result == undefined) {
-      if (script.length > 0) Executor.notFound([...path, ...script], options);
+      //TODO improve not found message
+      if (script.length > 0)
+        await Executor.notFound([...path, ...script], options);
       return;
     }
 
@@ -121,8 +142,9 @@ class Executor {
     path: string[],
     options: Options,
   ): Promise<void> {
+    //TODO improve not found message
     if (script.length > 0)
-      return Executor.notFound([...path, ...script], options);
+      return await Executor.notFound([...path, ...script], options);
 
     if (!options.excludeArgs && process.argv?.length) {
       context += " " + process.argv.join(" ");
@@ -184,7 +206,7 @@ class Executor {
       const element = context[parseInt(sub)];
 
       if (element === undefined)
-        return Executor.notFound([...path, sub], options);
+        return await Executor.notFound([...path, sub], options, context);
 
       await Executor.runScript(
         element,
@@ -240,7 +262,7 @@ class Executor {
             options,
           );
         } else {
-          return Executor.notFound([...path, sub], options, context);
+          return await Executor.notFound([...path, sub], options, context);
         }
       }
 
@@ -374,7 +396,25 @@ class Executor {
         options,
       );
     } else {
-      Executor.notFound([...path, "_default"], options, context);
+      await Executor.notFound([...path, "_default"], options, context);
+    }
+  }
+
+  static isExecutable(context: TScript): boolean {
+    if (typeof context === "function") return true;
+    if (typeof context === "string") return true;
+    // Unknown type
+    if (typeof context !== "object") return false;
+    if (Array.isArray(context)) return true;
+
+    const platform = process.platform;
+
+    if (Executor._isCI && Object.hasOwn(context, "_ci")) {
+      return true;
+    } else if (Object.hasOwn(context, platform)) {
+      return true;
+    } else {
+      return Object.hasOwn(context, "_default");
     }
   }
 }

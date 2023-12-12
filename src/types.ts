@@ -4,7 +4,7 @@ export interface TConfig {
   extends?: ExtendConfig[];
   scripts: TScripts;
   config?: {
-    allowFunction?: boolean;
+    defaultHelpBehavior?: "help" | "interactive";
   };
 }
 

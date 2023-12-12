@@ -1,11 +1,12 @@
 import { suite as _suite } from "uvu";
 import * as assert from "uvu/assert";
-import { Executor } from "../src/executor";
+import { Executor } from "../src/Executor";
 import sinon from "sinon";
 import child_process from "node:child_process";
 import { TError } from "../src/types";
-import { Help } from "../src/help";
+import { Help } from "../src/Help";
 import fs from "fs";
+import { ConfigLoader } from "../src/ConfigLoader";
 
 sinon.restore();
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -21,6 +22,12 @@ function suite(name: string): ReturnType<typeof _suite> {
     consoleLog = sinon.stub(console, "log");
     consoleError = sinon.stub(console, "error");
     process.argv = [];
+
+    // Set config to default
+    // @ts-expect-error config is private
+    ConfigLoader._config = {
+      scripts: {},
+    };
   });
   return test;
 }
@@ -208,49 +215,49 @@ getEnvSuite.run();
 // region notFound()
 const notFoundSuite = suite("notFound()");
 
-notFoundSuite("with no options should exit with code 127", () => {
+notFoundSuite("with no options should exit with code 127", async () => {
   // Arrange
   const exit = sinon.stub(process, "exit");
 
   // Act
-  Executor.notFound([], {});
+  await Executor.notFound([], {});
 
   // Assert
   assert.equal(exit.callCount, 1);
   assert.equal(exit.args[0][0], 127);
 });
 
-notFoundSuite("with ignoreNotFound option should not exit", () => {
+notFoundSuite("with ignoreNotFound option should not exit", async () => {
   // Arrange
   const exit = sinon.stub(process, "exit");
 
   // Act
-  Executor.notFound([], { ignoreNotFound: true });
+  await Executor.notFound([], { ignoreNotFound: true });
 
   // Assert
   assert.equal(exit.callCount, 0);
 });
 
-notFoundSuite("with no options should print error", () => {
+notFoundSuite("with no options should print error", async () => {
   // Arrange
   sinon.stub(process, "exit");
 
   // Act
-  Executor.notFound(["test"], {});
+  await Executor.notFound(["test"], {});
 
   // Assert
   assert.equal(consoleError.callCount, 1);
   assert.match(consoleError.args[0][0] as string, "Script 'test' not found");
 });
 
-notFoundSuite("with context should print subscripts", () => {
+notFoundSuite("with context should print subscripts", async () => {
   // Arrange
   sinon.stub(process, "exit");
   const printCommand = sinon.stub(Help, "printCommand");
   const printCommands = sinon.stub(Help, "printCommands");
 
   // Act
-  Executor.notFound(["wow", "test"], {}, { r: "test" });
+  await Executor.notFound(["wow", "test"], {}, { r: "test" });
 
   // Assert
   assert.equal(consoleError.callCount, 1);
@@ -262,14 +269,18 @@ notFoundSuite("with context should print subscripts", () => {
   assert.equal(printCommands.callCount, 1);
 });
 
-notFoundSuite("with context should print description", () => {
+notFoundSuite("with context should print description", async () => {
   // Arrange
   sinon.stub(process, "exit");
   const printCommand = sinon.stub(Help, "printCommand");
   const printCommands = sinon.stub(Help, "printCommands");
 
   // Act
-  Executor.notFound(["wow", "test"], {}, { r: "test", $description: "desc" });
+  await Executor.notFound(
+    ["wow", "test"],
+    {},
+    { r: "test", $description: "desc" },
+  );
 
   // Assert
   assert.equal(consoleError.callCount, 1);
@@ -281,14 +292,14 @@ notFoundSuite("with context should print description", () => {
   assert.equal(printCommands.callCount, 1);
 });
 
-notFoundSuite("with context root should not say does not have", () => {
+notFoundSuite("with context root should not say does not have", async () => {
   // Arrange
   sinon.stub(process, "exit");
   const printCommand = sinon.stub(Help, "printCommand");
   const printCommands = sinon.stub(Help, "printCommands");
 
   // Act
-  Executor.notFound(["test"], {}, { r: "test" });
+  await Executor.notFound(["test"], {}, { r: "test" });
 
   // Assert
   assert.equal(consoleError.callCount, 1);
@@ -404,13 +415,13 @@ executeFunctionSuite(
     // Act
     await Executor.executeFunction(context, [], [], {
       env: {
-        TEST: "test",
+        TEST_ENV3: "test",
       },
     });
 
     // Assert
     assert.equal(context.callCount, 1);
-    assert.equal(process.env.TEST, undefined);
+    assert.equal(process.env.TEST_ENV3, undefined);
   },
 );
 

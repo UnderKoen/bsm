@@ -1,7 +1,7 @@
 import { suite as _suite } from "uvu";
 import * as assert from "uvu/assert";
 import sinon from "sinon";
-import { Help } from "../src/help";
+import { Help } from "../src/Help";
 
 sinon.restore();
 let consoleLog = sinon.stub(console, "log");
@@ -37,22 +37,12 @@ const config = {
 //region printHelp
 const printHelp = suite("printHelp");
 
-printHelp("should not print anything if args is false", () => {
-  // Arrange
-
-  // Act
-  Help.printHelp(config, { _: [] }, false);
-
-  // Assert
-  assert.is(consoleLog.callCount, 0);
-});
-
 printHelp("should exit if args is true", () => {
   // Arrange
   const exit = sinon.stub(process, "exit");
 
   // Act
-  Help.printHelp(config, { _: [] }, true);
+  Help.printHelp(config, { _: [] });
 
   // Assert
   assert.is(exit.callCount, 1);
@@ -64,7 +54,7 @@ printHelp("should print all root commands if args is true", () => {
   sinon.stub(process, "exit");
 
   // Act
-  Help.printHelp(config, { _: [] }, true);
+  Help.printHelp(config, { _: [] });
 
   // Assert
   assert.is(consoleLog.callCount, 6);
@@ -81,7 +71,7 @@ printHelp("should print sub commands of args", () => {
   sinon.stub(process, "exit");
 
   // Act
-  Help.printHelp(config, { _: [] }, "sub");
+  Help.printHelp(config, { _: ["sub"] });
 
   // Assert
   assert.is(consoleLog.callCount, 5);
@@ -97,7 +87,7 @@ printHelp("should print sub commands of args with .*", () => {
   sinon.stub(process, "exit");
 
   // Act
-  Help.printHelp(config, { _: [] }, "sub.*");
+  Help.printHelp(config, { _: ["sub.*"] });
 
   // Assert
   assert.is(consoleLog.callCount, 4);
@@ -112,7 +102,7 @@ printHelp("should print sub commands of args with *", () => {
   sinon.stub(process, "exit");
 
   // Act
-  Help.printHelp(config, { _: [] }, "*");
+  Help.printHelp(config, { _: ["*"] });
 
   // Assert
   assert.is(consoleLog.callCount, 10);
@@ -133,7 +123,7 @@ printHelp("should print command if single response", () => {
   sinon.stub(process, "exit");
 
   // Act
-  Help.printHelp(config, { _: [] }, "test");
+  Help.printHelp(config, { _: ["test"] });
 
   // Assert
   assert.is(consoleLog.callCount, 2);
@@ -146,7 +136,7 @@ printHelp("should print command with array", () => {
   sinon.stub(process, "exit");
 
   // Act
-  Help.printHelp(config, { _: [] }, "lint");
+  Help.printHelp(config, { _: ["lint"] });
 
   // Assert
   assert.is(consoleLog.callCount, 3);
@@ -160,7 +150,7 @@ printHelp("should print command with array and index", () => {
   sinon.stub(process, "exit");
 
   // Act
-  Help.printHelp(config, { _: [] }, "lint.0");
+  Help.printHelp(config, { _: ["lint.0"] });
 
   // Assert
   assert.is(consoleLog.callCount, 2);
@@ -173,7 +163,7 @@ printHelp("should print command with array and *", () => {
   sinon.stub(process, "exit");
 
   // Act
-  Help.printHelp(config, { _: [] }, "lint.*");
+  Help.printHelp(config, { _: ["lint.*"] });
 
   // Assert
   assert.is(consoleLog.callCount, 3);
@@ -187,7 +177,7 @@ printHelp("should print commands with array args", () => {
   sinon.stub(process, "exit");
 
   // Act
-  Help.printHelp(config, { _: [] }, ["lint", "format"]);
+  Help.printHelp(config, { _: ["lint", "format"] });
 
   // Assert
   assert.is(consoleLog.callCount, 5);
@@ -195,17 +185,6 @@ printHelp("should print commands with array args", () => {
   assert.match(consoleLog.getCall(1).args[0] as string, "lint.0");
   assert.match(consoleLog.getCall(2).args[0] as string, "lint.1");
   assert.match(consoleLog.getCall(3).args[0] as string, "format");
-});
-
-printHelp("should do nothing if undefined args", () => {
-  // Arrange
-  sinon.stub(process, "exit");
-
-  // Act
-  Help.printHelp(config, { _: [] }, undefined);
-
-  // Assert
-  assert.is(consoleLog.callCount, 0);
 });
 
 printHelp.run();
@@ -296,4 +275,26 @@ printCommand("should print command if function", () => {
 });
 
 printCommand.run();
+//endregion
+
+//region printVersion
+
+const printVersion = suite("printVersion");
+
+printVersion("should print version", () => {
+  // Arrange
+  const exit = sinon.stub(process, "exit");
+
+  // Act
+  Help.printVersion();
+
+  // Assert
+  assert.is(consoleLog.callCount, 1);
+  assert.match(consoleLog.getCall(0).args[0] as string, /\d+\.\d+\.\d+/);
+  assert.is(exit.callCount, 1);
+  assert.is(exit.getCall(0).args[0], 0);
+});
+
+printVersion.run();
+
 //endregion

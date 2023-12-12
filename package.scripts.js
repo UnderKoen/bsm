@@ -5,12 +5,17 @@ module.exports = {
       $description: "Build the project, has options for prod, dev, and watch",
       _default: {
         _pre: "rimraf ./dist",
-        _default:
-          "esbuild src/index.ts --bundle --platform=node --target=node16 --outfile=dist/index.js",
+        _default: "node esbuild.config.js",
       },
-      prod: "bsm ~ -- --minify",
-      dev: "bsm ~ -- --sourcemap",
-      watch: "bsm ~.dev -- --watch",
+      prod: {
+        //TODO single line $env
+        $env: {
+          PROD: "TRUE",
+        },
+        _default: "bsm build",
+      },
+      //TODO
+      watch: "bsm ~ -- --watch",
     },
     prettier: {
       $description: "Run all formatters",
@@ -26,15 +31,23 @@ module.exports = {
     lint: {
       $description: "Run all linters",
       _default: "bsm ~.*",
+      typescript: "tsc --noEmit",
       eslint: "eslint --ext .ts,.js .",
       prettier: "prettier --check .",
     },
     test: {
-      _default: "uvu -r tsm test",
-      cov: "c8 bsm ~",
+      $env: {
+        TEST: "TRUE",
+        NODE_ENV: "test",
+      },
+      _default: "uvu -r tsm test -i fixtures",
+      cov: "c8 bsm ~ --",
     },
     env: () => {
       console.log(process.env);
     },
+  },
+  config: {
+    defaultHelpBehavior: "interactive",
   },
 };
