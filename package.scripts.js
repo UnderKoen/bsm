@@ -40,6 +40,7 @@ module.exports = {
         TEST: "TRUE",
         NODE_ENV: "test",
       },
+      _pre: "bsm build",
       _default: "uvu -r tsm test -i fixtures",
       cov: "c8 bsm ~ --",
     },
