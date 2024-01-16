@@ -7,6 +7,7 @@ import { TError } from "../src/types";
 import { Help } from "../src/Help";
 import fs from "fs";
 import { ConfigLoader } from "../src/ConfigLoader";
+import { CiPlugin } from "../src/plugins/CiPlugin";
 
 sinon.restore();
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -1072,7 +1073,7 @@ runObjectSuite("should call runScript() with _{os}", async () => {
 runObjectSuite("should call runScript() with _ci", async () => {
   // Arrange
   const runScript = sinon.stub(Executor, "runScript");
-  sinon.stub(Executor, "_isCI").get(() => true);
+  sinon.stub(CiPlugin, "isExecutable").returns(true);
 
   // Act
   await Executor.executeObject(
@@ -1095,7 +1096,7 @@ runObjectSuite(
     // Arrange
     const runScript = sinon.stub(Executor, "runScript");
     const notFound = sinon.stub(Executor, "notFound");
-    sinon.stub(Executor, "_isCI").get(() => false);
+    sinon.stub(CiPlugin, "isExecutable").returns(false);
 
     // Act
     await Executor.executeObject(
@@ -1131,7 +1132,7 @@ runObjectSuite(
   async () => {
     // Arrange
     const runScript = sinon.stub(Executor, "runScript");
-    sinon.stub(Executor, "_isCI").get(() => true);
+    sinon.stub(CiPlugin, "isExecutable").returns(true);
 
     // Act
     await Executor.executeObject(

@@ -1,11 +1,14 @@
 import { TError, TFunction, TScript, TScripts } from "./types";
 import child_process from "node:child_process";
-import { isCI } from "ci-info";
 import { Help } from "./Help";
 import path from "path";
 import fs from "fs";
 import { Interactive } from "./Interactive";
 import { ConfigLoader } from "./ConfigLoader";
+import { Plugin } from "./Plugin";
+import { CiPlugin } from "./plugins/CiPlugin";
+import { PlatformPlugin } from "./plugins/PlatformPlugin";
+import { DefaultPlugin } from "./plugins/DefaultPlugin";
 
 type Options = {
   excludeArgs?: true;
@@ -14,6 +17,10 @@ type Options = {
 };
 
 class Executor {
+  static get plugins(): Plugin[] {
+    return [CiPlugin, PlatformPlugin, DefaultPlugin];
+  }
+
   static async run(script: string): Promise<void> {
     const config = ConfigLoader.config;
     await Executor.runScript(config.scripts, script.split("."), [], {});
@@ -369,35 +376,22 @@ class Executor {
     return true;
   }
 
-  /**
-   * Just exists for testing purposes
-   */
-  static get _isCI(): boolean {
-    return isCI;
-  }
-
   static async runObject(context: TScripts, path: string[], options: Options) {
-    const platform = `_${process.platform}`;
+    for (const plugin of this.plugins) {
+      if (plugin.isExecutable(context)) {
+        const r = await plugin.execute(context);
 
-    if (Executor._isCI && Object.hasOwn(context, "_ci")) {
-      await Executor.runScript(context["_ci"], [], [...path, "_ci"], options);
-    } else if (Object.hasOwn(context, platform)) {
-      await Executor.runScript(
-        context[platform],
-        [],
-        [...path, platform],
-        options,
-      );
-    } else if (Object.hasOwn(context, "_default")) {
-      await Executor.runScript(
-        context["_default"],
-        [],
-        [...path, "_default"],
-        options,
-      );
-    } else {
-      await Executor.notFound([...path, "_default"], options, context);
+        if (r === undefined) return;
+        return await Executor.runScript(
+          r,
+          [],
+          plugin.path != null ? [...path, plugin.path] : path,
+          options,
+        );
+      }
     }
+
+    await Executor.notFound([...path, "_default"], options, context);
   }
 
   static isExecutable(context: TScript): boolean {
@@ -407,15 +401,11 @@ class Executor {
     if (typeof context !== "object") return false;
     if (Array.isArray(context)) return true;
 
-    const platform = process.platform;
-
-    if (Executor._isCI && Object.hasOwn(context, "_ci")) {
-      return true;
-    } else if (Object.hasOwn(context, platform)) {
-      return true;
-    } else {
-      return Object.hasOwn(context, "_default");
+    for (const plugin of this.plugins) {
+      if (plugin.isExecutable(context)) return true;
     }
+
+    return false;
   }
 }
 
