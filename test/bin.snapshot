@@ -1,0 +1,44 @@
+> echo default [90m(testing.default._default)[0m
+default
+> echo Windows [90m(testing.os._win32)[0m
+Windows
+> echo pre args [90m(testing.args._pre)[0m
+pre args
+> bsm testing.args.* -- [90m(testing.args._default)[0m
+> echo pre args [90m(testing.args._pre)[0m
+pre args
+> echo [90m(testing.args.echo)[0m
+ECHO is on.
+> echo [90m(testing.args.echo2)[0m
+ECHO is on.
+> echo 1 [90m(testing.array.0)[0m
+1
+> echo 2 [90m(testing.array.1)[0m
+2
+> echo 3 [90m(testing.array.2)[0m
+3
+> echo pre hooks [90m(testing.hooks._pre)[0m
+pre hooks
+> echo hooks1 [90m(testing.hooks._default.0)[0m
+hooks1
+> echo hooks2 [90m(testing.hooks._default.1)[0m
+hooks2
+> echo post [90m(testing.hooks._post)[0m
+post
+> bsm ~.test [90m(testing.relative._default)[0m
+> echo test [90m(testing.relative.test)[0m
+test
+> echo "pre test" [90m(testing.functions._pre._default)[0m
+"pre test"
+> bsm ~.* [90m(testing.functions._default)[0m
+> echo "pre test" [90m(testing.functions._pre._default)[0m
+"pre test"
+> [93mExecuting JavaScript function[0m [90m(testing.functions.return)[0m
+wow cool function bro 
+> echo evil [90m(testing.functions.return)[0m
+evil
+> [93mExecuting JavaScript function[0m [90m(testing.functions.empty)[0m
+wow cool function bro 
+> [93mExecuting JavaScript function[0m [90m(testing.env._default)[0m
+true
+123

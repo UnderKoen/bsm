@@ -117,6 +117,9 @@ module.exports = {
           },
         },
       },
+      interactive: {
+        notFound: "bsm ~._notFound",
+      },
     },
   },
 };

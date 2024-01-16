@@ -1,26 +1,9 @@
 import { TConfig, TScript } from "./types";
 import minimist from "minimist";
 
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 class Help {
-  static printHelp(
-    config: TConfig,
-    argv: minimist.ParsedArgs,
-    args: unknown,
-  ): void {
-    const helps: string[] = [];
-    if (typeof args === "boolean") {
-      if (!args) return;
-    } else if (typeof args === "string" || typeof args === "number") {
-      helps.push(`${args}`);
-    } else if (Array.isArray(args)) {
-      helps.push(...(args as string[]));
-    } else {
-      return;
-    }
-
-    helps.push(...argv._);
-
+  static printHelp(config: TConfig, argv: minimist.ParsedArgs): void {
+    const helps: string[] = argv._;
     if (helps.length === 0) {
       //Printing all commands
       console.log(`\n\x1b[1mAvailable commands:\x1b[0m`);
@@ -111,9 +94,14 @@ class Help {
       return;
     }
 
-    if (path[path.length - 1] === "$description") return;
+    const out = Help.getCommandHelp(scripts, path);
+    if (out) console.log(out);
+  }
 
-    const prefix = `\x1b[92m${path.join(".")}\x1b[90m - \x1b[0m`;
+  static getCommandHelp(scripts: TScript, path: string[]): string | undefined {
+    if (path[path.length - 1] === "$description") return undefined;
+
+    const prefix = `\x1b[92m${path.join(".")}\x1b[0m\x1b[90m - \x1b[0m`;
     let suffix: string;
     if (typeof scripts === "string") {
       suffix = scripts;
@@ -129,7 +117,7 @@ class Help {
       }
     }
 
-    console.log(`${prefix}${suffix}`);
+    return `${prefix}${suffix}`;
   }
 
   static printVersion(): void {

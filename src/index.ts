@@ -2,36 +2,45 @@
 
 import minimist from "minimist";
 
-import * as fs from "node:fs";
 import path from "path";
 
 import { TScript, TError } from "./types";
-import { Help } from "./help";
-import { loadConfig } from "./configLoader";
-import { Executor } from "./executor";
+import { Help } from "./Help";
+import { ConfigLoader } from "./ConfigLoader";
+import { Executor } from "./Executor";
+import { Interactive } from "./Interactive";
 
-const argv = minimist(process.argv.slice(2), { "--": true });
+export const argv = minimist(process.argv.slice(2), {
+  "--": true,
+  boolean: ["interactive", "help", "version"],
+  alias: {
+    help: "h",
+    version: "v",
+    interactive: "i",
+  },
+});
+
 //TODO maybe not the cleanest way to do this
 process.argv = argv["--"] ?? [];
 
-const config = loadConfig(argv);
+const config = ConfigLoader.load(argv);
 
-async function main() {
-  if (argv["version"]) {
-    Help.printVersion();
+export async function main() {
+  if (argv["version"]) Help.printVersion();
+  if (argv["help"]) Help.printHelp(config, argv);
+  if (argv["interactive"]) {
+    argv._ = await Interactive.selectScript(config, argv);
   }
 
-  Help.printHelp(config, argv, argv.h);
-  Help.printHelp(config, argv, argv.help);
+  await handleNoArgs();
 
-  handleNoArgs();
-
-  addToPath(process.env, await getNpmBin());
+  addToPath(process.env, getNpmBin());
 
   for (let script of argv._) {
     // On Windows, you can't escape the tilde, so we have to do it for the user
     script = script.replace(/^\\~/g, "~");
 
+    // TODO: move this to Executor
     if (script.startsWith("~") && process.env.BSM_PATH) {
       const prefix = process.env.BSM_PATH.split(".");
       const sub = getScript(config.scripts, prefix);
@@ -42,11 +51,11 @@ async function main() {
       }
     }
 
-    await Executor.runScript(config.scripts, script.split("."), [], {});
+    await Executor.run(script);
   }
 }
 
-function handleNoArgs() {
+async function handleNoArgs() {
   if (argv._.length > 0) return;
 
   const event = process.env.npm_lifecycle_event;
@@ -55,37 +64,31 @@ function handleNoArgs() {
     return;
   }
 
-  Help.printHelp(config, argv, true);
-}
-
-function addToPath(env: NodeJS.ProcessEnv, path: string | null): void {
-  if (!path) return;
-  if (process.platform === "win32") {
-    if (!process.env.Path || process.env.Path.includes(path)) return;
-    env.Path = `${process.env.Path};${path}`;
+  if (config.config?.defaultHelpBehavior === "interactive") {
+    argv._ = await Interactive.selectScript(config, argv);
   } else {
-    if (!process.env.PATH || process.env.PATH.includes(path)) return;
-    env.PATH = `${process.env.PATH}:${path}`;
+    Help.printHelp(config, argv);
   }
 }
 
-async function getNpmBin(): Promise<string | null> {
+function addToPath(env: NodeJS.ProcessEnv, path: string[]): void {
+  if (!path) return;
+  const sep = process.platform === "win32" ? ";" : ":";
+  const bin = path.join(sep);
+
+  if (!process.env.Path || process.env.Path.includes(bin)) return;
+  env.Path = `${process.env.Path}${sep}${bin}`;
+}
+
+function getNpmBin(): string[] {
+  const paths: string[] = [];
   let cwd = process.cwd();
 
-  while (
-    await fs.promises
-      .access(path.join(cwd, "node_modules/.bin"), fs.constants.X_OK)
-      .then(
-        () => false, // exists
-        () => true, // doesn't exist
-      )
-  ) {
-    const cwd2 = path.join(cwd, "../");
-    if (cwd2 === cwd) return null;
-    cwd = cwd2;
-  }
+  do {
+    paths.push(path.join(cwd, "node_modules/.bin"));
+  } while (cwd !== (cwd = path.join(cwd, "../")));
 
-  return path.join(cwd, "node_modules/.bin");
+  return paths;
 }
 
 function getScript(scripts: TScript, name: string[]): TScript | undefined {
@@ -104,21 +107,22 @@ function getScript(scripts: TScript, name: string[]): TScript | undefined {
   }
 }
 
-main().catch((c: TError) => {
-  if (c.function) {
-    console.error(c.function);
-    console.error(`\x1b[31mError executing function '${c.script}'\x1b[0m`);
-    process.exit(1);
-  }
+if (process.env.NODE_ENV !== "test")
+  main().catch((c: TError) => {
+    if (c.function) {
+      console.error(c.function);
+      console.error(`\x1b[31mError executing function '${c.script}'\x1b[0m`);
+      process.exit(1);
+    }
 
-  if (c.code === undefined) {
-    console.error(c);
-    console.error(`\x1b[31mScript failed\x1b[0m`);
-    process.exit(1);
-  }
+    if (c.code === undefined) {
+      console.error(c);
+      console.error(`\x1b[31mScript failed\x1b[0m`);
+      process.exit(1);
+    }
 
-  console.error(
-    `\x1b[31mScript failed with code ${c.code}\x1b[0m \x1b[90m(${c.script})\x1b[0m`,
-  );
-  process.exit(c.code);
-});
+    console.error(
+      `\x1b[31mScript failed with code ${c.code}\x1b[0m \x1b[90m(${c.script})\x1b[0m`,
+    );
+    process.exit(c.code);
+  });
