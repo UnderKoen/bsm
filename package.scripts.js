@@ -49,6 +49,6 @@ module.exports = {
     },
   },
   config: {
-    defaultHelpBehavior: "interactive",
+    // defaultHelpBehavior: "interactive",
   },
 };

@@ -1,3 +1,4 @@
+import { Options } from "./Executor";
 import { TScript, TScripts } from "./types";
 
 type PromiseOrNot<T> = T | Promise<T>;
@@ -7,7 +8,9 @@ export abstract class Plugin {
 
   public abstract execute(
     script: TScripts,
-  ): PromiseOrNot<void> | PromiseOrNot<TScript>;
+    path: string[],
+    options: Options,
+  ): PromiseOrNot<void> | PromiseOrNot<TScript | undefined>;
 
   public abstract readonly path: string | undefined;
 }

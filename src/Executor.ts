@@ -9,8 +9,9 @@ import { Plugin } from "./Plugin";
 import { CiPlugin } from "./plugins/CiPlugin";
 import { PlatformPlugin } from "./plugins/PlatformPlugin";
 import { DefaultPlugin } from "./plugins/DefaultPlugin";
+import { ConcurrentlyPlugin } from "./plugins/ConcurrentlyPlugin";
 
-type Options = {
+export type Options = {
   excludeArgs?: true;
   ignoreNotFound?: true;
   env?: Record<string, string>;
@@ -18,7 +19,7 @@ type Options = {
 
 class Executor {
   static get plugins(): Plugin[] {
-    return [CiPlugin, PlatformPlugin, DefaultPlugin];
+    return [new ConcurrentlyPlugin(), CiPlugin, PlatformPlugin, DefaultPlugin];
   }
 
   static async run(script: string): Promise<void> {
@@ -379,7 +380,7 @@ class Executor {
   static async runObject(context: TScripts, path: string[], options: Options) {
     for (const plugin of this.plugins) {
       if (plugin.isExecutable(context)) {
-        const r = await plugin.execute(context);
+        const r = await plugin.execute(context, path, options);
 
         if (r === undefined) return;
         return await Executor.runScript(

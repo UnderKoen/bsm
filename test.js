@@ -120,6 +120,9 @@ module.exports = {
       interactive: {
         notFound: "bsm ~._notFound",
       },
+      concurrently: {
+        _concurrently: ["echo 1", "echo 2", "echo 3"],
+      },
     },
   },
 };

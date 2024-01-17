@@ -11,4 +11,5 @@ require("esbuild").build({
   },
   minify: prod,
   sourcemap: !prod,
+  external: ["concurrently"],
 });
