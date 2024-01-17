@@ -1,0 +1,8 @@
+exitcode: 0
+
+> exit 4 [90m(testing.error.finally._default)[0m
+> echo finally [90m(testing.error.finally._finally)[0m
+finally
+> [93mExecuting JavaScript function[0m [90m(testing.error._catch)[0m
+> echo 4 [90m(testing.error._catch)[0m
+4

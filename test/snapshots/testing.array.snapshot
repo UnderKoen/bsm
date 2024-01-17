@@ -1,0 +1,8 @@
+exitcode: 0
+
+> echo 1 [90m(testing.array.0)[0m
+1
+> echo 2 [90m(testing.array.1)[0m
+2
+> echo 3 [90m(testing.array.2)[0m
+3

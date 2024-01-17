@@ -1,0 +1,5 @@
+exitcode: 0
+
+> exit 4 [90m(testing.error.catch._default)[0m
+> echo catch [90m(testing.error.catch._catch)[0m
+catch

@@ -64,7 +64,7 @@ module.exports = {
           _catch: "exit 3",
           _finally: "echo finally",
         },
-        _catch: "echo %BSM_ERROR%",
+        _catch: () => `echo ${process.env.BSM_ERROR}`,
       },
       functions: {
         _default: "bsm ~.*",
@@ -82,10 +82,10 @@ module.exports = {
           return() {
             return "exit 1";
           },
-          _onError: "echo %BSM_ERROR%",
+          _onError: () => `echo ${process.env.BSM_ERROR}`,
         },
         _pre: {
-          _default: 'echo "pre test"',
+          _default: "echo pre test",
         },
       },
       env: {

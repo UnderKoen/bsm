@@ -1,0 +1,10 @@
+exitcode: 0
+
+> echo pre hooks [90m(testing.hooks._pre)[0m
+pre hooks
+> echo hooks1 [90m(testing.hooks._default.0)[0m
+hooks1
+> echo hooks2 [90m(testing.hooks._default.1)[0m
+hooks2
+> echo post [90m(testing.hooks._post)[0m
+post

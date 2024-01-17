@@ -1,0 +1,5 @@
+exitcode: 0
+
+> bsm ~.test [90m(testing.relative._default)[0m
+> echo test [90m(testing.relative.test)[0m
+test

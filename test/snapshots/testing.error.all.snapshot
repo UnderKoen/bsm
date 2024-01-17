@@ -1,0 +1,11 @@
+exitcode: 0
+
+> exit 4 [90m(testing.error.all._default)[0m
+> echo onError [90m(testing.error.all._onError)[0m
+onError
+> exit 3 [90m(testing.error.all._catch)[0m
+> echo finally [90m(testing.error.all._finally)[0m
+finally
+> [93mExecuting JavaScript function[0m [90m(testing.error._catch)[0m
+> echo 3 [90m(testing.error._catch)[0m
+3

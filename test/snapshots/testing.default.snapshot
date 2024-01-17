@@ -1,0 +1,4 @@
+exitcode: 0
+
+> echo default [90m(testing.default._default)[0m
+default

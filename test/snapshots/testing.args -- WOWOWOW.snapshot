@@ -1,0 +1,11 @@
+exitcode: 0
+
+> echo pre args [90m(testing.args._pre)[0m
+pre args
+> bsm testing.args.* -- WOWOWOW [90m(testing.args._default)[0m
+> echo pre args [90m(testing.args._pre)[0m
+pre args
+> echo WOWOWOW [90m(testing.args.echo)[0m
+WOWOWOW
+> echo WOWOWOW [90m(testing.args.echo2)[0m
+WOWOWOW

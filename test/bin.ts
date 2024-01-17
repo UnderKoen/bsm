@@ -1,37 +1,67 @@
-import { test, exec } from "uvu";
+import { test } from "uvu";
 import * as assert from "uvu/assert";
 import child_process from "node:child_process";
 import fs from "fs";
 
-test("bsm testing.*", async () => {
-  let text = "";
+const commands = [
+  "testing.default",
+  // "testing.os", //Skip on CI
+  "testing.args -- WOWOWOW",
+  "testing.array",
+  "testing.hooks",
+  "testing.relative",
+  "testing.error.onError",
+  "testing.error.catch",
+  "testing.error.finally",
+  "testing.error.all",
+  "testing.functions",
+  "testing.env",
+  "testing.env.overrides",
+  "testing.env.file",
+];
 
-  const code = await new Promise<number>((resolve, reject) => {
-    const s = child_process.spawn("node ./dist/index testing.*", [], {
-      shell: true,
-      cwd: process.cwd(),
+for (const command of commands) {
+  test(`bsm ${command}`, async () => {
+    let text = "";
+
+    const code = await new Promise<number>((resolve) => {
+      const s = child_process.spawn(
+        `node ./dist/index --config ./test ${command}`,
+        [],
+        {
+          shell: true,
+          cwd: process.cwd(),
+        },
+      );
+
+      s.stdout.setEncoding("utf8");
+      s.stdout.on("data", function (data) {
+        text += data;
+      });
+
+      s.stderr.setEncoding("utf8");
+      s.stderr.on("data", function (data) {
+        text += data;
+      });
+
+      s.on("close", resolve);
     });
 
-    s.stdout.setEncoding("utf8");
-    s.stdout.on("data", function (data) {
-      text += data;
-    });
+    const snapshot = `exitcode: ${code}\n\n${text}`;
 
-    s.stderr.setEncoding("utf8");
-    s.stderr.on("data", function (data) {
-      text += data;
-    });
+    if (!fs.existsSync(`./test/snapshots/${command}.snapshot`)) {
+      fs.writeFileSync(
+        `./test/snapshots/${command}.snapshot`,
+        snapshot,
+        "utf8",
+      );
+    }
 
-    s.on("close", (code: number) => {
-      resolve(code);
-    });
+    assert.snapshot(
+      snapshot,
+      fs.readFileSync(`./test/snapshots/${command}.snapshot`, "utf8"),
+    );
   });
-
-  assert.is(code, 0);
-
-  // fs.writeFileSync("./test/bin.snapshot", text, "utf8");
-
-  assert.is(text, fs.readFileSync("./test/bin.snapshot", "utf8"));
-});
+}
 
 test.run();
