@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/UnderKoen/bsm/compare/v1.2.5...v1.3.0) (2024-01-17)
+
+
+### Features
+
+* interactive script selection ([51e3742](https://github.com/UnderKoen/bsm/commit/51e37424f2e9fd3446e76e06a0723ded18de17a4))
+
 ## [1.2.5](https://github.com/UnderKoen/bsm/compare/v1.2.4...v1.2.5) (2023-11-09)
 
 
