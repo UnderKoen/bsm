@@ -115,7 +115,7 @@ if (process.env.NODE_ENV !== "test")
       process.exit(1);
     }
 
-    if (c.code === undefined) {
+    if (c.code == null) {
       console.error(c);
       console.error(`\x1b[31mScript failed\x1b[0m`);
       process.exit(1);
