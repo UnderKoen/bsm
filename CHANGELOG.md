@@ -1,3 +1,10 @@
+## [1.3.1](https://github.com/UnderKoen/bsm/compare/v1.3.0...v1.3.1) (2024-01-18)
+
+
+### Bug Fixes
+
+* Script failed with code null ([671650d](https://github.com/UnderKoen/bsm/commit/671650db740da7690ce6d8e721a4cd3327d26e8e))
+
 # [1.3.0](https://github.com/UnderKoen/bsm/compare/v1.2.5...v1.3.0) (2024-01-17)
 
 
