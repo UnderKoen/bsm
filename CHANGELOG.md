@@ -1,3 +1,10 @@
+## [1.3.2](https://github.com/UnderKoen/bsm/compare/v1.3.1...v1.3.2) (2024-01-18)
+
+
+### Bug Fixes
+
+* Config option for no args instead of all help ([3354c40](https://github.com/UnderKoen/bsm/commit/3354c4097dd4163a7796c934c96ff2d52be3d6c6))
+
 ## [1.3.1](https://github.com/UnderKoen/bsm/compare/v1.3.0...v1.3.1) (2024-01-18)
 
 
