@@ -5,6 +5,7 @@ export interface TConfig {
   scripts: TScripts;
   config?: {
     defaultHelpBehavior?: "help" | "interactive";
+    defaultNoArgsBehavior?: "help" | "interactive";
   };
 }
 

@@ -1,5 +1,22 @@
 # BSM (Basic Script Manager)
 
+[![npm package][npm-img]][npm-url]
+[![Build Status][build-img]][build-url]
+[![Issues][issues-img]][issues-url]
+[![Semantic Release][semantic-release-img]][semantic-release-url]
+
+[npm-img]:https://img.shields.io/npm/v/@under_koen/bsm
+[npm-url]:https://www.npmjs.com/package/@under_koen/bsm
+
+[build-img]:https://github.com/UnderKoen/bsm/actions/workflows/release.yml/badge.svg
+[build-url]:https://github.com/UnderKoen/bsm/actions/workflows/release.yml
+
+[issues-img]:https://img.shields.io/github/issues/UnderKoen/bsm
+[issues-url]:https://github.com/UnderKoen/bsm/issues
+
+[semantic-release-img]:https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg
+[semantic-release-url]:https://github.com/semantic-release/semantic-release
+
 BSM is a tool that enhances the functionality of NPM by allowing users to define their scripts in a separate files. This
 makes it easier to create and manage complex scripts using JavaScript, without cluttering your `package.json` file.
 
@@ -10,11 +27,11 @@ makes it easier to create and manage complex scripts using JavaScript, without c
 Install BSM as a dev dependency or globally.
 
 ```bash
-npm install --save-dev bsm
+npm install --save-dev @under_koen/bsm
 ```
 
 ```bash
-npm install -g bsm
+npm install -g @under_koen/bsm
 ```
 
 ### Usage

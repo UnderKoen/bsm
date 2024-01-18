@@ -64,7 +64,12 @@ async function handleNoArgs() {
     return;
   }
 
-  if (config.config?.defaultHelpBehavior === "interactive") {
+  const behavior =
+    config.config?.defaultNoArgsBehavior ??
+    config.config?.defaultHelpBehavior ??
+    "help";
+
+  if (behavior === "interactive") {
     argv._ = await Interactive.selectScript(config, argv);
   } else {
     Help.printHelp(config, argv);
