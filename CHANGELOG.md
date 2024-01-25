@@ -1,3 +1,10 @@
+## [1.3.3](https://github.com/UnderKoen/bsm/compare/v1.3.2...v1.3.3) (2024-01-25)
+
+
+### Bug Fixes
+
+* add debug script ([5fe37c6](https://github.com/UnderKoen/bsm/commit/5fe37c68f408898ee3a75dbbee62b834ed54e31f))
+
 ## [1.3.2](https://github.com/UnderKoen/bsm/compare/v1.3.1...v1.3.2) (2024-01-18)
 
 
