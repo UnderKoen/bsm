@@ -4,7 +4,7 @@ import minimist from "minimist";
 
 import path from "path";
 
-import { TScript, TError } from "./types";
+import { TScript, TError, TScripts } from "./types";
 import { Help } from "./Help";
 import { ConfigLoader } from "./ConfigLoader";
 import { Executor } from "./Executor";
@@ -25,7 +25,51 @@ process.argv = argv["--"] ?? [];
 
 const config = ConfigLoader.load(argv);
 
+function values(t: TScripts | TScript[]): TScript[] {
+  if (Array.isArray(t)) return t;
+  return Object.entries(t)
+    .filter(([k]) => !k.startsWith("$"))
+    .map(([, v]) => v);
+}
+
 export async function main() {
+  if (argv["debug"]) {
+    switch (argv["debug"]) {
+      case "extends": {
+        const ext = config.extends;
+        if (ext) {
+          for (const el of ext) {
+            if (typeof el === "string") {
+              console.log(el);
+            } else {
+              console.log(el[0]);
+            }
+          }
+        }
+
+        return process.exit(0);
+      }
+
+      case "scripts": {
+        const scripts = [...values(config.scripts)];
+        const all: string[] = [];
+        while (scripts.length > 0) {
+          const script = scripts.shift();
+          if (!script) continue;
+
+          if (typeof script === "string") {
+            all.push(script);
+          } else if (typeof script === "object") {
+            scripts.push(...values(script));
+          }
+        }
+
+        console.log(all.join("\n"));
+        return process.exit(0);
+      }
+    }
+  }
+
   if (argv["version"]) Help.printVersion();
   if (argv["help"]) Help.printHelp(config, argv);
   if (argv["interactive"]) {

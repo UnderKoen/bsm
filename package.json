@@ -51,6 +51,7 @@
     "minimist": "^1.2.8",
     "prettier": "^3.2.2",
     "prettier-package-json": "^2.8.0",
+    "rimraf": "^5.0.5",
     "semantic-release": "^23.0.0",
     "sinon": "^17.0.1",
     "tsm": "^2.3.0",
