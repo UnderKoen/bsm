@@ -120,6 +120,11 @@ module.exports = {
       interactive: {
         notFound: "bsm ~._notFound",
       },
+      debug: {
+        _default: "bsm ~.*",
+        scripts: "bsm --debug scripts",
+        extends: "bsm --debug extends",
+      },
     },
   },
 };

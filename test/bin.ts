@@ -18,6 +18,7 @@ const commands = [
   "testing.env",
   "testing.env.overrides",
   "testing.env.file",
+  "testing.debug",
 ];
 
 for (const command of commands) {

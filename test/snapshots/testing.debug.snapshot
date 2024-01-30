@@ -1,0 +1,50 @@
+exitcode: 0
+
+> bsm ~.* [90m(testing.debug._default)[0m
+> bsm --debug scripts [90m(testing.debug.scripts)[0m
+echo default
+echo Windows
+echo Not Windows
+echo pre args
+bsm testing.args.* --
+echo
+echo
+echo 1
+echo 2
+echo 3
+echo pre hooks
+echo post
+bsm ~.test
+echo test
+bsm ~.*
+bsm ~._notFound
+bsm ~.*
+bsm --debug scripts
+bsm --debug extends
+echo hooks1
+echo hooks2
+echo pre test
+echo test
+echo error
+bsm ~.unknown
+bsm ~._
+echo $BSM_PATH
+echo %BSM_PATH%
+exit 4
+echo onError
+exit 4
+echo catch
+exit 4
+exit 0
+echo finally
+exit 4
+exit 0
+echo post
+echo onError
+exit 3
+echo finally
+echo pre test
+echo $BSM_PATH
+echo %BSM_PATH%
+echo testing.debug
+> bsm --debug extends [90m(testing.debug.extends)[0m
