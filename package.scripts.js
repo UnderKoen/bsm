@@ -47,6 +47,7 @@ module.exports = {
     env: () => {
       console.log(process.env);
     },
+    up: "npm up --save",
   },
   config: {
     defaultNoArgsBehavior: "interactive",
