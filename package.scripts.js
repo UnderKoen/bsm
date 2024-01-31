@@ -40,7 +40,7 @@ module.exports = {
         TEST: "TRUE",
         NODE_ENV: "test",
       },
-      _pre: "bsm build",
+      _pre: ["bsm build", "cpy ./dist ./node_modules/@under_koen/bsm"],
       _default: "uvu -r tsm test -i fixtures",
       cov: "c8 bsm ~ --",
     },
