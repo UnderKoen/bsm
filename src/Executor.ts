@@ -326,7 +326,7 @@ class Executor {
       } else {
         //TODO: support for other formats
         console.error(
-          "\x1b[31mCurrently only file: is supported for environment variables\x1b[0m\n",
+          "\x1b[31mCurrently only 'file:' is supported for environment variables\x1b[0m\n",
         );
 
         return {};
