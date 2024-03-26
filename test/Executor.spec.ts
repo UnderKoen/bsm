@@ -209,6 +209,26 @@ getEnvSuite("should log error if unknown string", () => {
   );
 });
 
+getEnvSuite("should return empty if empty string", () => {
+  // Arrange
+
+  // Act
+  const result = Executor.getEnv("");
+
+  // Assert
+  assert.equal(result, {});
+});
+
+getEnvSuite("should not log error if empty string", () => {
+  // Arrange
+
+  // Act
+  Executor.getEnv("");
+
+  // Assert
+  assert.equal(consoleError.callCount, 0);
+});
+
 getEnvSuite.run();
 //endregion
 

@@ -282,7 +282,9 @@ class Executor {
 
   static getEnv(context: TScript): Record<string, string> {
     if (typeof context === "string") {
-      if (context.startsWith("file:")) {
+      if (context === "") {
+        return {};
+      } else if (context.startsWith("file:")) {
         // Maybe have an option for static file instead of cws
         const file = path.join(process.cwd(), context.slice(5));
 
