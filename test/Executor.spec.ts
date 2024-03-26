@@ -205,7 +205,7 @@ getEnvSuite("should log error if unknown string", () => {
   assert.equal(consoleError.callCount, 1);
   assert.match(
     consoleError.args[0][0] as string,
-    "Currently only file: is supported for environment variables",
+    "Currently only 'file:' is supported for environment variables",
   );
 });
 
