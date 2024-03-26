@@ -1,3 +1,11 @@
+## [1.3.4](https://github.com/UnderKoen/bsm/compare/v1.3.3...v1.3.4) (2024-03-26)
+
+
+### Bug Fixes
+
+* empty string $env ([3339ce2](https://github.com/UnderKoen/bsm/commit/3339ce2bea5ce80efa23b5d06ab905f706668b20))
+* improve environment warning ([9bea058](https://github.com/UnderKoen/bsm/commit/9bea05884495a8c350802ab9ee02da8a2156d877))
+
 ## [1.3.3](https://github.com/UnderKoen/bsm/compare/v1.3.2...v1.3.3) (2024-01-25)
 
 
