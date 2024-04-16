@@ -11,7 +11,9 @@ export class Interactive {
     config: TConfig,
     argv: minimist.ParsedArgs,
   ): Promise<string[]> {
-    const args = argv._[0]?.split(".") ?? [];
+    const arg = argv._[0]?.replace(/^~/, process.env.BSM_PATH ?? "~");
+
+    const args = arg?.split(".") ?? [];
 
     const initial: [string, TScript][] = [];
     let par: TScript[] | TScripts = config.scripts;
