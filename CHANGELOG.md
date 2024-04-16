@@ -1,3 +1,10 @@
+## [1.3.5](https://github.com/UnderKoen/bsm/compare/v1.3.4...v1.3.5) (2024-04-16)
+
+
+### Bug Fixes
+
+* allow use of relative paths for interactive mode ([36968d8](https://github.com/UnderKoen/bsm/commit/36968d84e7907dea4b2971c7a66891801655bbc4))
+
 ## [1.3.4](https://github.com/UnderKoen/bsm/compare/v1.3.3...v1.3.4) (2024-03-26)
 
 
