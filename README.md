@@ -198,6 +198,28 @@ module.exports = {
 `bsm example` will execute the `example._win32` on Windows, `example._darwin` on MacOS, and `example._linux` on Linux.
 When no OS specific script is found, the default script will be executed.
 
+#### Chipset Specified scripts
+
+You can specify OS specific scripts with `_x64`, `_x32`, and `_arm64` keys.
+All Chipsets can be seen [here](https://nodejs.org/api/os.html#os_os_arch).
+
+```javascript
+module.exports = {
+  scripts: {
+    example: {
+      _x64: "echo 64-bit",
+      _x32: "echo 32-bit",
+      _arm: "echo ARM",
+      _arm64: "echo ARM64",
+      _default: "echo Unknown",
+    },
+  },
+};
+```
+
+`bsm example` will execute the `example._win32` on Windows, `example._darwin` on MacOS, and `example._linux` on Linux.
+When no OS specific script is found, the default script will be executed.
+
 ### Script arguments
 
 All arguments passed to the `bsm` command after `--` will be passed to all specified scripts.

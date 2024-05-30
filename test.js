@@ -8,6 +8,13 @@ module.exports = {
         _win32: "echo Windows",
         _default: "echo Not Windows",
       },
+      arch: {
+        _x64: "echo 64-bit",
+        _x32: "echo 32-bit",
+        _arm: "echo ARM",
+        _arm64: "echo ARM64",
+        _default: "echo Unknown",
+      },
       args: {
         _pre: "echo pre args",
         _default: "bsm testing.args.* --",

@@ -5,6 +5,11 @@ exitcode: 0
 echo default
 echo Windows
 echo Not Windows
+echo 64-bit
+echo 32-bit
+echo ARM
+echo ARM64
+echo Unknown
 echo pre args
 bsm testing.args.* --
 echo

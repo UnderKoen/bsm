@@ -1,11 +1,12 @@
+/* c8 ignore start */
+//TODO find a way to test this
+
 import { createPrompt, useState, useKeypress, useMemo } from "@inquirer/core";
 import { TConfig, TScript, TScripts } from "./types";
 import minimist from "minimist";
 import { Help } from "./Help";
 import { Executor } from "./Executor";
 
-//TODO find a way to test this
-/* c8 ignore start */
 export class Interactive {
   static async selectScript(
     config: TConfig,

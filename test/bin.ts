@@ -6,6 +6,7 @@ import fs from "fs";
 const commands = [
   "testing.default",
   // "testing.os", //Skip on CI
+  // "testing.arch", //Skip on CI
   "testing.args -- WOWOWOW",
   "testing.array",
   "testing.hooks",

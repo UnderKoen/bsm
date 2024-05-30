@@ -14,6 +14,8 @@ type Options = {
 };
 
 class Executor {
+  //We test this with bin.ts
+  /* c8 ignore next 4 */
   static async run(script: string): Promise<void> {
     const config = ConfigLoader.config;
     await Executor.runScript(config.scripts, script.split("."), [], {});
@@ -63,7 +65,9 @@ class Executor {
         );
       }
 
+      /* c8 ignore next 9 */
       if (ConfigLoader.config.config?.defaultHelpBehavior === "interactive") {
+        //Interactive currently cannot be tested
         const scripts = await Interactive.selectScript(ConfigLoader.config, {
           _: [path.join(".")],
         });
@@ -378,30 +382,37 @@ class Executor {
     return isCI;
   }
 
-  static async runObject(context: TScripts, path: string[], options: Options) {
-    const platform = `_${process.platform}`;
-
-    if (Executor._isCI && Object.hasOwn(context, "_ci")) {
-      await Executor.runScript(context["_ci"], [], [...path, "_ci"], options);
-    } else if (Object.hasOwn(context, platform)) {
-      await Executor.runScript(
-        context[platform],
-        [],
-        [...path, platform],
-        options,
-      );
-    } else if (Object.hasOwn(context, "_default")) {
-      await Executor.runScript(
-        context["_default"],
-        [],
-        [...path, "_default"],
-        options,
-      );
-    } else {
-      await Executor.notFound([...path, "_default"], options, context);
+  static get objectScripts(): string[] {
+    const scriptNames = [
+      `_${process.platform}`,
+      `_${process.arch}`,
+      "_default",
+    ];
+    if (Executor._isCI) {
+      scriptNames.unshift("_ci");
     }
+
+    return scriptNames;
   }
 
+  static async runObject(context: TScripts, path: string[], options: Options) {
+    for (const script of Executor.objectScripts) {
+      if (Object.hasOwn(context, script)) {
+        await Executor.runScript(
+          context[script],
+          [],
+          [...path, script],
+          options,
+        );
+        return;
+      }
+    }
+
+    await Executor.notFound([...path, "_default"], options, context);
+  }
+
+  //TODO currently only used in interactive
+  /* c8 ignore next 15 */
   static isExecutable(context: TScript): boolean {
     if (typeof context === "function") return true;
     if (typeof context === "string") return true;
@@ -409,15 +420,13 @@ class Executor {
     if (typeof context !== "object") return false;
     if (Array.isArray(context)) return true;
 
-    const platform = process.platform;
-
-    if (Executor._isCI && Object.hasOwn(context, "_ci")) {
-      return true;
-    } else if (Object.hasOwn(context, platform)) {
-      return true;
-    } else {
-      return Object.hasOwn(context, "_default");
+    for (const script of Executor.objectScripts) {
+      if (Object.hasOwn(context, script)) {
+        return true;
+      }
     }
+
+    return false;
   }
 }
 
