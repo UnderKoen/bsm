@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/UnderKoen/bsm/compare/v1.3.5...v1.4.0) (2024-05-30)
+
+
+### Features
+
+* add `_${process.arch}` scripts ([fccc9cf](https://github.com/UnderKoen/bsm/commit/fccc9cf98ae32953aa644fb6b9628482a61b24cc))
+
 ## [1.3.5](https://github.com/UnderKoen/bsm/compare/v1.3.4...v1.3.5) (2024-04-16)
 
 
