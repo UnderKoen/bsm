@@ -1,3 +1,11 @@
+# [1.5.0](https://github.com/UnderKoen/bsm/compare/v1.4.0...v1.5.0) (2024-06-18)
+
+
+### Features
+
+* add `$alias` option ([906f2d2](https://github.com/UnderKoen/bsm/commit/906f2d26b343e05533cfd21c5d10f27bf7dec1a2))
+* support `$alias` option on arrays ([10940de](https://github.com/UnderKoen/bsm/commit/10940de9f517dbaf84a4aa42c083f12e942b9c7a))
+
 # [1.4.0](https://github.com/UnderKoen/bsm/compare/v1.3.5...v1.4.0) (2024-05-30)
 
 
