@@ -209,8 +209,20 @@ class Executor {
       const sub = script[0];
       const element = context[parseInt(sub)];
 
-      if (element === undefined)
-        return await Executor.notFound([...path, sub], options, context);
+      if (element === undefined) {
+        const alias = Executor.subscriptWithAlias(context, sub);
+        if (alias) {
+          await Executor.runScript(
+            alias[1],
+            script.slice(1),
+            [...path, alias[0]],
+            options,
+          );
+          return;
+        } else {
+          return await Executor.notFound([...path, sub], options, context);
+        }
+      }
 
       await Executor.runScript(
         element,

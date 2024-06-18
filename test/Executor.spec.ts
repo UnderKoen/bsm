@@ -665,6 +665,36 @@ executeArraySuite(
   },
 );
 
+executeArraySuite("should call runScript() with alias", async () => {
+  // Arrange
+  const runScript = sinon.stub(Executor, "runScript");
+  const notFound = sinon.stub(Executor, "notFound");
+
+  // Act
+  await Executor.executeArray(
+    [
+      {
+        $alias: "test2",
+      },
+      "echo 12",
+      {
+        $alias: "alias",
+      },
+    ],
+    ["alias"],
+    [],
+    {},
+  );
+
+  // Assert
+  assert.equal(runScript.callCount, 1);
+  assert.equal(runScript.args[0][0], {
+    $alias: "alias",
+  });
+  assert.equal(runScript.args[0][2], ["2"]);
+  assert.equal(notFound.callCount, 0);
+});
+
 executeArraySuite.run();
 // endregion
 

@@ -1,6 +1,6 @@
 exitcode: 0
 
-> bsm ~.n ~.l ~.ls ~.d.n [90m(testing.alias._default)[0m
+> bsm ~.n ~.l ~.ls ~.d.n ~.list.test [90m(testing.alias._default)[0m
 > echo normal [90m(testing.alias.normal._default)[0m
 normal
 > echo list [90m(testing.alias.list._default)[0m
@@ -9,3 +9,14 @@ list
 list
 > echo deep normal [90m(testing.alias.deep.normal._default)[0m
 deep normal
+> bsm ~.list.t ~.list.n ~.list ~.list.0 [90m(testing.alias.list.test)[0m
+> echo test [90m(testing.alias.list.list.0._default)[0m
+test
+> echo new [90m(testing.alias.list.list.1._default)[0m
+new
+> echo test [90m(testing.alias.list.list.0._default)[0m
+test
+> echo new [90m(testing.alias.list.list.1._default)[0m
+new
+> echo test [90m(testing.alias.list.list.0._default)[0m
+test
