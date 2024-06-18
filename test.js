@@ -132,6 +132,24 @@ module.exports = {
         scripts: "bsm --debug scripts",
         extends: "bsm --debug extends",
       },
+      alias: {
+        _default: "bsm ~.n ~.l ~.ls ~.d.n",
+        normal: {
+          $alias: "n",
+          _default: "echo normal",
+        },
+        list: {
+          $alias: ["l", "ls"],
+          _default: "echo list",
+        },
+        deep: {
+          $alias: "d",
+          normal: {
+            $alias: "n",
+            _default: "echo deep normal",
+          },
+        },
+      },
     },
   },
 };

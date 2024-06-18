@@ -266,7 +266,17 @@ class Executor {
             options,
           );
         } else {
-          return await Executor.notFound([...path, sub], options, context);
+          const alias = Executor.subscriptWithAlias(context, sub);
+          if (alias) {
+            await Executor.runScript(
+              alias[1],
+              script.slice(1),
+              [...path, alias[0]],
+              options,
+            );
+          } else {
+            return await Executor.notFound([...path, sub], options, context);
+          }
         }
       }
 
@@ -282,6 +292,33 @@ class Executor {
     } finally {
       await Executor.executeHook(context, "_finally", path, options);
     }
+  }
+
+  static subscriptWithAlias(
+    context: TScripts | TScript[],
+    alias: string,
+  ): [string, TScript] | undefined {
+    for (const entry of Object.entries(context)) {
+      const script = entry[1];
+      if (typeof script !== "object") continue;
+      if (Array.isArray(script)) continue;
+
+      if (Object.hasOwn(script, "$alias")) {
+        const aliases = script["$alias"];
+
+        if (typeof aliases === "string") {
+          if (aliases === alias) {
+            return entry;
+          }
+        } else if (Array.isArray(aliases)) {
+          if (aliases.includes(alias)) {
+            return entry;
+          }
+        }
+      }
+    }
+
+    return undefined;
   }
 
   static getEnv(context: TScript): Record<string, string> {

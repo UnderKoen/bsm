@@ -20,6 +20,7 @@ const commands = [
   "testing.env.overrides",
   "testing.env.file",
   "testing.debug",
+  "testing.alias",
 ];
 
 for (const command of commands) {

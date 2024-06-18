@@ -1276,6 +1276,122 @@ envSuite("should not override environment variables", async () => {
 envSuite.run();
 // endregion
 
+// region executeObject() - $alias
+const aliasSuite = suite("executeObject() - $alias");
+
+aliasSuite("should find script with alias", async () => {
+  // Arrange
+  const runScript = sinon.stub(Executor, "runScript");
+
+  // Act
+  await Executor.executeObject(
+    {
+      test: {
+        $alias: "alias",
+      },
+      not: "not",
+      other: {
+        $alias: "other",
+      },
+    },
+    ["alias"],
+    [],
+    {},
+  );
+
+  // Assert
+  assert.equal(runScript.callCount, 1);
+  assert.equal(runScript.args[0][0], {
+    $alias: "alias",
+  });
+  assert.equal(runScript.args[0][2], ["test"]);
+});
+
+aliasSuite("should find script with multiple aliases", async () => {
+  // Arrange
+  const runScript = sinon.stub(Executor, "runScript");
+
+  // Act
+  await Executor.executeObject(
+    {
+      test: {
+        $alias: ["alias", "alias2"],
+      },
+      not: "not",
+      other: {
+        $alias: "other",
+      },
+    },
+    ["alias2"],
+    [],
+    {},
+  );
+
+  // Assert
+  assert.equal(runScript.callCount, 1);
+  assert.equal(runScript.args[0][0], {
+    $alias: ["alias", "alias2"],
+  });
+  assert.equal(runScript.args[0][2], ["test"]);
+});
+
+aliasSuite("should use not use alias if normal script is found", async () => {
+  // Arrange
+  const runScript = sinon.stub(Executor, "runScript");
+
+  // Act
+  await Executor.executeObject(
+    {
+      test: {
+        $alias: "alias",
+      },
+      alias: "not",
+      other: {
+        $alias: "other",
+      },
+    },
+    ["alias"],
+    [],
+    {},
+  );
+
+  // Assert
+  assert.equal(runScript.callCount, 1);
+  assert.equal(runScript.args[0][0], "not");
+  assert.equal(runScript.args[0][2], ["alias"]);
+});
+
+aliasSuite("should use first alias if multiple scripts are found", async () => {
+  // Arrange
+  const runScript = sinon.stub(Executor, "runScript");
+
+  // Act
+  await Executor.executeObject(
+    {
+      list: ["1"],
+      test: {
+        $alias: ["alias", "alias2"],
+      },
+      other: {
+        $alias: "alias",
+      },
+    },
+    ["alias"],
+    [],
+    {},
+  );
+
+  // Assert
+  assert.equal(runScript.callCount, 1);
+  assert.equal(runScript.args[0][0], {
+    $alias: ["alias", "alias2"],
+  });
+  assert.equal(runScript.args[0][2], ["test"]);
+});
+
+aliasSuite.run();
+// endregion
+
 // endregion
 
 // region runScript()

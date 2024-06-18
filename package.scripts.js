@@ -36,6 +36,7 @@ module.exports = {
       prettier: "prettier --check .",
     },
     test: {
+      $alias: "t",
       $env: {
         TEST: "TRUE",
         NODE_ENV: "test",
