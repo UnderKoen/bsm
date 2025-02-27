@@ -52,60 +52,60 @@ getSource.run();
 //region loadFile
 const loadFile = suite("loadFile");
 
-loadFile("should return undefined if no file is provided", () => {
+loadFile("should return undefined if no file is provided", async () => {
   //Arrange
   const exit = sinon.stub(process, "exit");
 
   //Act
-  const config = ConfigLoader.loadFile(undefined);
+  const config = await ConfigLoader.loadFile(undefined);
 
   //Assert
   assert.is(config, undefined);
   assert.is(exit.callCount, 0);
 });
 
-loadFile("should return undefined if file is not found", () => {
+loadFile("should return undefined if file is not found", async () => {
   //Arrange
   const exit = sinon.stub(process, "exit");
 
   //Act
-  const config = ConfigLoader.loadFile("test/fixtures/missing.json");
+  const config = await ConfigLoader.loadFile("test/fixtures/missing.json");
 
   //Assert
   assert.is(config, undefined);
   assert.is(exit.callCount, 0);
 });
 
-loadFile("should return exit if file contains an error", () => {
+loadFile("should return exit if file contains an error", async () => {
   //Arrange
   const exit = sinon.stub(process, "exit");
 
   //Act
-  ConfigLoader.loadFile("./test/fixtures/error");
+  await ConfigLoader.loadFile("./test/fixtures/error");
 
   //Assert
   assert.is(exit.callCount, 1);
   assert.is(exit.getCall(0).args[0], 1);
 });
 
-loadFile("should return default config if file is empty", () => {
+loadFile("should return default config if file is empty", async () => {
   //Arrange
   const exit = sinon.stub(process, "exit");
 
   //Act
-  const config = ConfigLoader.loadFile("./test/fixtures/empty.json");
+  const config = await ConfigLoader.loadFile("./test/fixtures/empty.json");
 
   //Assert
   assert.equal(config, DEFAULT_CONFIG);
   assert.is(exit.callCount, 0);
 });
 
-loadFile("function config should be called with args", () => {
+loadFile("function config should be called with args", async () => {
   //Arrange
   const exit = sinon.stub(process, "exit");
 
   //Act
-  const config = ConfigLoader.loadFile([
+  const config = await ConfigLoader.loadFile([
     "./test/fixtures/function.js",
     {
       scripts: {
@@ -124,24 +124,24 @@ loadFile("function config should be called with args", () => {
   assert.is(exit.callCount, 0);
 });
 
-loadFile("function config should be called without args", () => {
+loadFile("function config should be called without args", async () => {
   //Arrange
   const exit = sinon.stub(process, "exit");
 
   //Act
-  const config = ConfigLoader.loadFile("./test/fixtures/function.js");
+  const config = await ConfigLoader.loadFile("./test/fixtures/function.js");
 
   //Assert
   assert.equal(config, DEFAULT_CONFIG);
   assert.is(exit.callCount, 0);
 });
 
-loadFile("config with args should exit if not found", () => {
+loadFile("config with args should exit if not found", async () => {
   //Arrange
   const exit = sinon.stub(process, "exit");
 
   //Act
-  const config = ConfigLoader.loadFile([
+  const config = await ConfigLoader.loadFile([
     "./test/fixtures/error",
     {
       scripts: {
@@ -162,22 +162,25 @@ loadFile.run();
 //region loadExtensions
 const loadExtensions = suite("loadExtensions");
 
-loadExtensions("should return empty array if config has no extensions", () => {
-  //Arrange
-  const config = {
-    scripts: {},
-  };
+loadExtensions(
+  "should return empty array if config has no extensions",
+  async () => {
+    //Arrange
+    const config = {
+      scripts: {},
+    };
 
-  //Act
-  const configs = ConfigLoader.loadExtensions(config);
+    //Act
+    const configs = await ConfigLoader.loadExtensions(config);
 
-  //Assert
-  assert.is(configs.length, 0);
-});
+    //Assert
+    assert.is(configs.length, 0);
+  },
+);
 
 loadExtensions(
   "should return empty array if config has empty extensions",
-  () => {
+  async () => {
     //Arrange
     const config = {
       scripts: {},
@@ -185,14 +188,14 @@ loadExtensions(
     };
 
     //Act
-    const configs = ConfigLoader.loadExtensions(config);
+    const configs = await ConfigLoader.loadExtensions(config);
 
     //Assert
     assert.is(configs.length, 0);
   },
 );
 
-loadExtensions("should exit if config has no valid extensions", () => {
+loadExtensions("should exit if config has no valid extensions", async () => {
   //Arrange
   const config = {
     scripts: {},
@@ -201,14 +204,14 @@ loadExtensions("should exit if config has no valid extensions", () => {
   const exit = sinon.stub(process, "exit");
 
   //Act
-  const configs = ConfigLoader.loadExtensions(config);
+  const configs = await ConfigLoader.loadExtensions(config);
 
   //Assert
   assert.is(configs.length, 0);
   assert.is(exit.callCount, 1);
 });
 
-loadExtensions("should return array of configs", () => {
+loadExtensions("should return array of configs", async () => {
   //Arrange
   const config = {
     scripts: {},
@@ -220,7 +223,7 @@ loadExtensions("should return array of configs", () => {
   };
 
   //Act
-  const configs = ConfigLoader.loadExtensions(config);
+  const configs = await ConfigLoader.loadExtensions(config);
 
   //Assert
   assert.is(configs.length, 3);
@@ -234,13 +237,13 @@ loadExtensions.run();
 //region load
 const load = suite("load");
 
-load("should exit if no config is found", () => {
+load("should exit if no config is found", async () => {
   //Arrange
-  sinon.stub(ConfigLoader, "loadFile").returns(undefined);
+  sinon.stub(ConfigLoader, "loadFile").resolves(undefined);
   const exit = sinon.stub(process, "exit");
 
   //Act
-  ConfigLoader.load({
+  await ConfigLoader.load({
     _: [],
     config: "test/fixtures/missing.json",
   });
@@ -249,10 +252,10 @@ load("should exit if no config is found", () => {
   assert.is(exit.callCount, 1);
 });
 
-load("should return argv config if found", () => {
+load("should return argv config if found", async () => {
   //Arrange
-  sinon.stub(ConfigLoader, "loadFile").callsFake(
-    (file) =>
+  sinon.stub(ConfigLoader, "loadFile").callsFake((file) =>
+    Promise.resolve(
       (file === "TEST"
         ? {
             scripts: {
@@ -262,11 +265,12 @@ load("should return argv config if found", () => {
         : {
             scripts: {},
           }) as TConfig,
+    ),
   );
   const exit = sinon.stub(process, "exit");
 
   //Act
-  const config = ConfigLoader.load({
+  const config = await ConfigLoader.load({
     _: [],
     config: "TEST",
   });
@@ -280,13 +284,13 @@ load("should return argv config if found", () => {
   assert.is(exit.callCount, 0);
 });
 
-load("should set BSM_CONFIG env var", () => {
+load("should set BSM_CONFIG env var", async () => {
   //Arrange
-  sinon.stub(ConfigLoader, "loadFile").returns({} as TConfig);
+  sinon.stub(ConfigLoader, "loadFile").resolves({} as TConfig);
   const exit = sinon.stub(process, "exit");
 
   //Act
-  ConfigLoader.load({
+  await ConfigLoader.load({
     _: [],
     config: "TEST",
   });
@@ -296,14 +300,14 @@ load("should set BSM_CONFIG env var", () => {
   assert.is(exit.callCount, 0);
 });
 
-load("should return other file if configs not found", () => {
+load("should return other file if configs not found", async () => {
   //Arrange
   sinon.fake.returns(undefined);
-  sinon.stub(ConfigLoader, "loadFile").returns(DEFAULT_CONFIG);
+  sinon.stub(ConfigLoader, "loadFile").resolves(DEFAULT_CONFIG);
   const exit = sinon.stub(process, "exit");
 
   //Act
-  const config = ConfigLoader.load({
+  const config = await ConfigLoader.load({
     _: [],
     config: "TEST",
   });
@@ -313,13 +317,13 @@ load("should return other file if configs not found", () => {
   assert.is(exit.callCount, 0);
 });
 
-load("should set ConfigLoader.config", () => {
+load("should set ConfigLoader.config", async () => {
   //Arrange
-  sinon.stub(ConfigLoader, "loadFile").returns({} as TConfig);
+  sinon.stub(ConfigLoader, "loadFile").resolves({} as TConfig);
   const exit = sinon.stub(process, "exit");
 
   //Act
-  ConfigLoader.load({
+  await ConfigLoader.load({
     _: [],
     config: "TEST",
   });

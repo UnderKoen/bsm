@@ -2,9 +2,9 @@
 
 import minimist from "minimist";
 
-import { TError } from "./types";
 import { ConfigLoader } from "./ConfigLoader";
 import { Cli } from "./Cli";
+import { BsmError, BsmFunctionError } from "./BsmError";
 
 const argv = minimist(process.argv.slice(2), {
   "--": true,
@@ -28,21 +28,21 @@ export async function main() {
 }
 
 if (process.env.NODE_ENV !== "test")
-  main().catch((c: TError) => {
-    if (c.function) {
-      console.error(c.function);
+  main().catch((c: unknown) => {
+    if (c instanceof BsmFunctionError) {
+      console.error(c.func);
       console.error(`\x1b[31mError executing function '${c.script}'\x1b[0m`);
       process.exit(1);
     }
 
-    if (c.code == null) {
-      console.error(c);
-      console.error(`\x1b[31mScript failed\x1b[0m`);
-      process.exit(1);
+    if (c instanceof BsmError) {
+      console.error(
+        `\x1b[31mScript failed with code ${c.code}\x1b[0m \x1b[90m(${c.script})\x1b[0m`,
+      );
+      process.exit(c.code);
     }
 
-    console.error(
-      `\x1b[31mScript failed with code ${c.code}\x1b[0m \x1b[90m(${c.script})\x1b[0m`,
-    );
-    process.exit(c.code);
+    console.error(c);
+    console.error(`\x1b[31mScript failed\x1b[0m`);
+    process.exit(1);
   });

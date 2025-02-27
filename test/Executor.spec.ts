@@ -3,10 +3,10 @@ import * as assert from "uvu/assert";
 import { Executor } from "../src/Executor";
 import sinon from "sinon";
 import child_process from "node:child_process";
-import { TError } from "../src/types";
 import { Help } from "../src/Help";
 import fs from "fs";
 import { ConfigLoader } from "../src/ConfigLoader";
+import { BsmError, BsmFunctionError } from "../src/BsmError";
 
 sinon.restore();
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -402,9 +402,10 @@ executeFunctionSuite("should throw error on function error", async () => {
     assert.unreachable("should have thrown");
   } catch (e) {
     // Assert
-    const error = e as TError;
+    assert.instance(e, BsmFunctionError);
+    const error = e as BsmFunctionError;
 
-    assert.equal(error.function, throws);
+    assert.equal(error.func, throws);
     assert.equal(error.script, "");
   }
 });
@@ -420,9 +421,10 @@ executeFunctionSuite("error should not contain BSM stack trace", async () => {
     assert.unreachable("should have thrown");
   } catch (e) {
     // Assert
-    const error = e as TError;
+    assert.instance(e, BsmFunctionError);
+    const error = e as BsmFunctionError;
 
-    assert.equal(error.function?.stack?.includes("at executeFunction"), false);
+    assert.equal(error.func?.stack?.includes("at executeFunction"), false);
   }
 });
 
@@ -528,7 +530,8 @@ executeStringSuite("should throw error on non-zero exit code", async () => {
     assert.unreachable("should have thrown");
   } catch (e) {
     // Assert
-    const error = e as TError;
+    assert.instance(e, BsmError);
+    const error = e as BsmError;
 
     assert.equal(error.code, 1);
     assert.equal(error.script, "path.test.fail");
@@ -1050,9 +1053,10 @@ hooksSuite("should call hooks in correct order", async () => {
 
 hooksSuite("BSM_ERROR should be set on error", async () => {
   // Arrange
-  const runScript = sinon.stub(Executor, "runScript").onCall(0).throws({
-    code: 1337,
-  });
+  const runScript = sinon
+    .stub(Executor, "runScript")
+    .onCall(0)
+    .throws(new BsmError(1337, ""));
   const notFound = sinon.stub(Executor, "notFound");
 
   // Act

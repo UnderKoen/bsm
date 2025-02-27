@@ -21,6 +21,7 @@ const commands = [
   "testing.env.file",
   "testing.debug",
   "testing.alias",
+  "testing.idempotency",
 ];
 
 for (const command of commands) {

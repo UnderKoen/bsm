@@ -27,6 +27,7 @@ bsm ~.*
 bsm --debug scripts
 bsm --debug extends
 bsm ~.n ~.l ~.ls ~.d.n ~.list.test
+bsm ~.* && bsm ~.*
 echo hooks1
 echo hooks2
 echo pre test
@@ -53,6 +54,13 @@ echo pre test
 echo normal
 echo list
 bsm ~.list.t ~.list.n ~.list ~.list.0
+echo static
+echo static random
+echo env
+echo "env random"
+echo notExistingFile
+echo file
+echo disabled
 echo $BSM_PATH
 echo %BSM_PATH%
 echo testing.debug
