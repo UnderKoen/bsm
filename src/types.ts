@@ -6,6 +6,10 @@ export interface TConfig {
   config?: {
     defaultHelpBehavior?: "help" | "interactive";
     defaultNoArgsBehavior?: "help" | "interactive";
+    idempotency?: {
+      location?: string;
+      useFileContent?: boolean;
+    };
   };
 }
 
@@ -18,15 +22,3 @@ export interface TScripts {
 // eslint-disable-next-line @typescript-eslint/ban-types
 export type TFunction = Function;
 export type TScript = string | TScript[] | TScripts | TFunction;
-
-export type TError =
-  | {
-      code: number;
-      function?: undefined;
-      script: string;
-    }
-  | {
-      code: undefined;
-      function: Error;
-      script: string;
-    };

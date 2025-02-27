@@ -1,4 +1,4 @@
-import { TError, TFunction, TScript, TScripts } from "./types";
+import { TFunction, TScript, TScripts } from "./types";
 import child_process from "node:child_process";
 import { isCI } from "ci-info";
 import { Help } from "./Help";
@@ -6,8 +6,10 @@ import path from "path";
 import fs from "fs";
 import { Interactive } from "./Interactive";
 import { ConfigLoader } from "./ConfigLoader";
+import { Idempotency } from "./Idempotency";
+import { BsmError, BsmFunctionError } from "./BsmError";
 
-type Options = {
+export type Options = {
   excludeArgs?: true;
   ignoreNotFound?: true;
   env?: Record<string, string>;
@@ -119,10 +121,7 @@ class Executor {
         e.stack = e.stack?.split("    at executeFunction")[0];
       }
 
-      throw {
-        function: e,
-        script: path.join("."),
-      } as TError;
+      throw new BsmFunctionError(e as Error, path.join("."));
     } finally {
       process.env = oldEnv;
     }
@@ -183,10 +182,7 @@ class Executor {
         if (code === 0) {
           resolve();
         } else {
-          reject({
-            code: code,
-            script: path.join("."),
-          });
+          reject(new BsmError(code, path.join(".")));
         }
       });
     });
@@ -239,6 +235,25 @@ class Executor {
     }
   }
 
+  static shouldRun(
+    context: TScripts,
+    script: string[],
+    path: string[],
+    options: Options,
+  ): boolean {
+    if (Idempotency.hasIdempotencyEnabled(context)) {
+      const isSame = Idempotency.checkIdempotency(context, path, options);
+      if (isSame) {
+        console.log(
+          `\x1b[90mNot running ${[...path, ...script].join(".")} because the idempotency hash is the same\x1b[0m`,
+        );
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   static async executeObject(
     context: TScripts,
     script: string[],
@@ -251,6 +266,10 @@ class Executor {
           ...options.env,
           ...Executor.getEnv(context["$env"]),
         };
+      }
+
+      if (!Executor.shouldRun(context, script, path, options)) {
+        return;
       }
 
       //TODO don't execute when command is not found
@@ -299,13 +318,26 @@ class Executor {
       }
 
       await Executor.executeHook(context, "_post", path, options);
+
+      if (Idempotency.hasIdempotencyEnabled(context)) {
+        Idempotency.saveIdempotency(context, path);
+      }
     } catch (e) {
-      process.env.BSM_ERROR = (e as TError).code?.toString() ?? "1";
+      if (e instanceof BsmError) {
+        process.env.BSM_ERROR = e.code.toString();
+      } else {
+        process.env.BSM_ERROR = "1";
+      }
 
       await Executor.executeHook(context, "_onError", path, options);
 
       if (!(await Executor.executeHook(context, "_catch", path, options))) {
         throw e;
+      }
+
+      // If the catch is successful, we save the idempotency hash
+      if (Idempotency.hasIdempotencyEnabled(context)) {
+        Idempotency.saveIdempotency(context, path);
       }
     } finally {
       await Executor.executeHook(context, "_finally", path, options);

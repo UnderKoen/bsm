@@ -161,6 +161,56 @@ module.exports = {
           },
         },
       },
+      idempotency: {
+        $env: {
+          BSM_IDEM_LOC:
+            process.env.BSM_IDEM_LOC ??
+            `./node_modules/.cache/bsm/testing/${Math.random().toString(36).substring(2)}`,
+        },
+        _default: "bsm ~.* && bsm ~.*",
+        static: {
+          $idempotency: "static:123",
+          _default: "echo static",
+        },
+        staticRnd: {
+          $idempotency: `static:${Math.random().toString(36).substring(2)}`,
+          _default: "echo static random",
+        },
+        env: {
+          $idempotency: "env:BSM_IDEM_LOC",
+          _default: "echo env",
+        },
+        envRnd: {
+          $env: {
+            TEST: Math.random().toString(36).substring(2),
+          },
+          $idempotency: "env:TEST",
+          _default: "echo env random",
+        },
+        notExistingFile: {
+          $idempotency: "file:notExistingFile",
+          _default: "echo notExistingFile",
+        },
+        file: {
+          $idempotency: "file:./test.env",
+          _default: "echo file",
+        },
+        dir: {
+          $idempotency: "dir:./test",
+          _default: "echo dir",
+        },
+        disabled: {
+          $idempotency: "static:disabled",
+          $idempotencyEnabled: false,
+          _default: "echo disabled",
+        },
+      },
+    },
+  },
+  config: {
+    idempotency: {
+      useFileContent: false,
+      location: process.env.BSM_IDEM_LOC,
     },
   },
 };

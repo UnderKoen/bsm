@@ -8,6 +8,10 @@ export const DEFAULT_CONFIG: Readonly<TConfig> = Object.freeze({
   scripts: {},
   config: {
     defaultHelpBehavior: "help",
+    idempotency: {
+      location: "./node_modules/.cache/bsm/idempotency",
+      useFileContent: false,
+    },
   },
 } as TConfig);
 
