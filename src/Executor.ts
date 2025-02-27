@@ -155,6 +155,12 @@ class Executor {
     }
 
     console.log(`> ${context} \x1b[90m(${path.join(".")})\x1b[0m`);
+    if (process.env.BSM_LOG_FILE) {
+      fs.appendFileSync(
+        process.env.BSM_LOG_FILE,
+        `${new Date().toISOString()}\t${context}\t${path.join(".")}\t${process.cwd()}\n`,
+      );
+    }
 
     if (context === "") return;
 

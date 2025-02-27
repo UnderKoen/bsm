@@ -1,6 +1,9 @@
 module.exports = {
   extends: ["./test"],
   scripts: {
+    $env: {
+      BSM_LOG_FILE: "./test.log",
+    },
     build: {
       $description: "Build the project, has options for prod, dev, and watch",
       _default: {
