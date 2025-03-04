@@ -157,6 +157,7 @@ export class Idempotency {
   }
 
   public static hasIdempotencyEnabled(context: TScripts): boolean {
+    if (process.env.BSM_DISABLE_IDEMPOTENCY === "true") return false;
     if (!Object.hasOwn(context, "$idempotency")) return false;
     if (!Object.hasOwn(context, "$idempotencyEnabled")) return true;
     return Boolean(context["$idempotencyEnabled"]);

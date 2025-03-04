@@ -63,6 +63,10 @@ export class Cli {
       this.argv._ = await Interactive.selectScript(this.config, this.argv);
     }
 
+    if (this.argv["force"]) {
+      process.env.BSM_DISABLE_IDEMPOTENCY = "true";
+    }
+
     await this.handleNoArgs();
 
     addToPath(process.env, getNpmBin());
