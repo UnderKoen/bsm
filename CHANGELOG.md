@@ -1,3 +1,13 @@
+# [1.6.0](https://github.com/UnderKoen/bsm/compare/v1.5.0...v1.6.0) (2025-03-04)
+
+
+### Features
+
+* allow for async configs ([d8e9177](https://github.com/UnderKoen/bsm/commit/d8e917778bba2f46af249e10585fa98138b3384e))
+* debug logging to file in BSM_LOG_FILE ([86bedc0](https://github.com/UnderKoen/bsm/commit/86bedc0ae64bc83d0b3725da63f8528589c75d4c))
+* idempotency ([50c0740](https://github.com/UnderKoen/bsm/commit/50c074042bc823148b1b81d0130a8d02e9581ee5))
+* idempotency ([5fdfbbd](https://github.com/UnderKoen/bsm/commit/5fdfbbddccb6f89107758d27cb7fdbcaeee36dd2))
+
 # [1.5.0](https://github.com/UnderKoen/bsm/compare/v1.4.0...v1.5.0) (2024-06-18)
 
 
