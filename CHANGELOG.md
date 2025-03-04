@@ -1,3 +1,10 @@
+## [1.6.1](https://github.com/UnderKoen/bsm/compare/v1.6.0...v1.6.1) (2025-03-04)
+
+
+### Bug Fixes
+
+* **idempotency:** directory not found ([deb0f57](https://github.com/UnderKoen/bsm/commit/deb0f573087c4e92d54a75ab4b90f814048afc29))
+
 # [1.6.0](https://github.com/UnderKoen/bsm/compare/v1.5.0...v1.6.0) (2025-03-04)
 
 
