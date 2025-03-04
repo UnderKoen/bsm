@@ -53,11 +53,13 @@ export class Idempotency {
       recursive: true,
     }).forEach((file) => {
       // Is for node 18
+      /* eslint-disable */
       /* c8 ignore next 3 */
       if (file.name == null) return;
       const fullPath = path
         .join(file.path ?? dir, file.name)
         .replace(/\\/g, "/");
+      /* eslint-enable */
       hash.update(fullPath);
       if (file.isFile()) this.updateHashForFile(hash, fullPath);
     });
@@ -87,7 +89,7 @@ export class Idempotency {
 
     for (const key of keys) {
       const type = key.split(":")[0] as IdempotencyType;
-      const value = key.substr(type.length + 1);
+      const value = key.substring(type.length + 1);
 
       switch (type) {
         case "static":

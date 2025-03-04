@@ -18,8 +18,8 @@ function suite(name: string): ReturnType<typeof _suite> {
     sinon.restore();
 
     // Don't output anything
-    consoleLog = sinon.stub(console, "log");
-    consoleError = sinon.stub(console, "error");
+    consoleLog = sinon.stub(console, "debug");
+    consoleError = sinon.stub(console, "warn");
     process.argv = [];
 
     // Set config to default
@@ -475,6 +475,8 @@ executeObjectSuite("should use default location", async () => {
   // Arrange
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   ConfigLoader.config.config!.idempotency!.location = undefined;
+  const runScript = sinon.stub(Executor, "runScript");
+
   await Executor.executeObject(
     {
       test: "test",
@@ -485,7 +487,7 @@ executeObjectSuite("should use default location", async () => {
     {},
   );
 
-  const runScript = sinon.stub(Executor, "runScript");
+  runScript.resetHistory();
 
   // Act
   await Executor.executeObject(
