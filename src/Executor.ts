@@ -245,7 +245,11 @@ class Executor {
     options: Options,
   ): boolean {
     if (Idempotency.hasIdempotencyEnabled(context)) {
-      const isSame = Idempotency.checkIdempotency(context, path, options);
+      const isSame = Idempotency.checkIdempotency(
+        context,
+        [...path, ...script],
+        options,
+      );
       if (isSame) {
         console.log(
           `\x1b[90mNot running ${[...path, ...script].join(".")} because the idempotency hash is the same\x1b[0m`,
@@ -324,7 +328,7 @@ class Executor {
       await Executor.executeHook(context, "_post", path, options);
 
       if (Idempotency.hasIdempotencyEnabled(context)) {
-        Idempotency.saveIdempotency(context, path);
+        Idempotency.saveIdempotency(context, [...path, ...script]);
       }
     } catch (e) {
       if (e instanceof BsmError) {
@@ -341,7 +345,7 @@ class Executor {
 
       // If the catch is successful, we save the idempotency hash
       if (Idempotency.hasIdempotencyEnabled(context)) {
-        Idempotency.saveIdempotency(context, path);
+        Idempotency.saveIdempotency(context, [...path, ...script]);
       }
     } finally {
       await Executor.executeHook(context, "_finally", path, options);

@@ -122,18 +122,19 @@ export class Idempotency {
     return hash.digest("hex");
   }
 
-  public static saveIdempotencyHash(hash: string, path: string[]): void {
+  private static getFileName(path: string[]): string {
     const script = path.join(".");
 
-    const fullPath = `${this.location}/${script}.hash`;
+    return `${this.location}/${script}.hash`.replaceAll("*", "__all__");
+  }
+
+  public static saveIdempotencyHash(hash: string, path: string[]): void {
     fs.mkdirSync(this.location, { recursive: true });
-    fs.writeFileSync(fullPath, hash);
+    fs.writeFileSync(this.getFileName(path), hash);
   }
 
   public static getSavedIdempotencyHash(path: string[]): string | undefined {
-    const script = path.join(".");
-
-    const fullPath = `${this.location}/${script}.hash`;
+    const fullPath = this.getFileName(path);
     if (!fs.existsSync(fullPath)) return undefined;
     return fs.readFileSync(fullPath, "utf-8");
   }

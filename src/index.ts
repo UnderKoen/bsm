@@ -13,6 +13,7 @@ const argv = minimist(process.argv.slice(2), {
     help: "h",
     version: "v",
     interactive: "i",
+    force: "f",
   },
 });
 
