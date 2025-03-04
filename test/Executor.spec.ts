@@ -424,7 +424,7 @@ executeFunctionSuite("error should not contain BSM stack trace", async () => {
     assert.instance(e, BsmFunctionError);
     const error = e as BsmFunctionError;
 
-    assert.equal(error.func?.stack?.includes("at executeFunction"), false);
+    assert.equal(error.func.stack?.includes("at executeFunction"), false);
   }
 });
 
@@ -866,7 +866,7 @@ hooksSuite("should not call _post hook on error", async () => {
       {},
     );
     assert.unreachable("should have thrown");
-  } catch (e) {
+  } catch {
     // Assert
     assert.equal(runScript.callCount, 1);
     assert.equal(runScript.args[0][0], "test");
@@ -914,7 +914,7 @@ hooksSuite("should call _finally hook on error", async () => {
       {},
     );
     assert.unreachable("should have thrown");
-  } catch (e) {
+  } catch {
     // Assert
     assert.equal(runScript.callCount, 2);
     assert.equal(runScript.args[0][0], "test");
@@ -940,7 +940,7 @@ hooksSuite("should call _onError hook on error", async () => {
       {},
     );
     assert.unreachable("should have thrown");
-  } catch (e) {
+  } catch {
     // Assert
     assert.equal(runScript.callCount, 2);
     assert.equal(runScript.args[0][0], "test");
@@ -1038,7 +1038,7 @@ hooksSuite("should call hooks in correct order", async () => {
       {},
     );
     assert.unreachable("should have thrown");
-  } catch (e) {
+  } catch {
     // Assert
     assert.equal(runScript.callCount, 6);
     assert.equal(runScript.args[0][0], "_pre");
@@ -1070,7 +1070,7 @@ hooksSuite("BSM_ERROR should be set on error", async () => {
       {},
     );
     assert.unreachable("should have thrown");
-  } catch (e) {
+  } catch {
     // Assert
     assert.equal(runScript.callCount, 1);
     assert.equal(runScript.args[0][0], "test");

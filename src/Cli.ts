@@ -12,7 +12,7 @@ function values(t: TScripts | TScript[]): TScript[] {
     .map(([, v]) => v);
 }
 
-function addToPath(env: NodeJS.ProcessEnv, path: string[]): void {
+function addToPath(env: NodeJS.ProcessEnv, path?: string[]): void {
   if (!path) return;
   const sep = process.platform === "win32" ? ";" : ":";
   const bin = path.join(sep);

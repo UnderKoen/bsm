@@ -39,12 +39,12 @@ for (const command of commands) {
       );
 
       s.stdout.setEncoding("utf8");
-      s.stdout.on("data", function (data) {
+      s.stdout.on("data", function (data: string) {
         text += data;
       });
 
       s.stderr.setEncoding("utf8");
-      s.stderr.on("data", function (data) {
+      s.stderr.on("data", function (data: string) {
         text += data;
       });
 

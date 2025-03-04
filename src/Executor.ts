@@ -146,10 +146,12 @@ class Executor {
     options: Options,
   ): Promise<void> {
     //TODO improve not found message
-    if (script.length > 0)
-      return await Executor.notFound([...path, ...script], options);
+    if (script.length > 0) {
+      await Executor.notFound([...path, ...script], options);
+      return;
+    }
 
-    if (!options.excludeArgs && process.argv?.length) {
+    if (!options.excludeArgs && process.argv.length) {
       context += " " + process.argv.join(" ");
     }
 
@@ -166,7 +168,7 @@ class Executor {
     // Escape ~ for unix shells
     context = context.replace(/bsm ~/g, "bsm \\~");
 
-    return await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       const s = child_process.spawn(context, [], {
         stdio: "inherit",
         shell: true,
@@ -209,7 +211,7 @@ class Executor {
       return;
     } else {
       const sub = script[0];
-      const element = context[parseInt(sub)];
+      const element = context[parseInt(sub)] as TScript | undefined;
 
       if (element === undefined) {
         const alias = Executor.subscriptWithAlias(context, sub);
@@ -222,7 +224,8 @@ class Executor {
           );
           return;
         } else {
-          return await Executor.notFound([...path, sub], options, context);
+          await Executor.notFound([...path, sub], options, context);
+          return;
         }
       }
 
@@ -312,7 +315,8 @@ class Executor {
               options,
             );
           } else {
-            return await Executor.notFound([...path, sub], options, context);
+            await Executor.notFound([...path, sub], options, context);
+            return;
           }
         }
       }

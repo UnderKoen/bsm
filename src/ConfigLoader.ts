@@ -41,7 +41,6 @@ export class ConfigLoader {
         paths: [process.cwd()],
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
       let config = require(source) as TConfig | AdvanceConfig;
       if (typeof config === "function") {
         config = await config(...(Array.isArray(file) ? file.slice(1) : []));
@@ -56,7 +55,7 @@ export class ConfigLoader {
       const path = error.requireStack?.[0]?.replaceAll("\\", "/");
 
       if (
-        (error?.code === "MODULE_NOT_FOUND" &&
+        (error.code === "MODULE_NOT_FOUND" &&
           path?.includes("bsm/dist/index.js")) ||
         // For when running tests or with ts-node
         (process.env.NODE_ENV !== "production" &&
@@ -97,7 +96,6 @@ export class ConfigLoader {
 
     console.error(
       `\x1b[31mCannot find config ${possibleConfigFiles
-        .filter((s): s is string => s !== undefined)
         .map((s) => `'${s}'`)
         .join(" or ")}\x1b[0m`,
     );
