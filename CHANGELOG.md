@@ -1,3 +1,11 @@
+## [1.6.2](https://github.com/UnderKoen/bsm/compare/v1.6.1...v1.6.2) (2025-03-04)
+
+
+### Bug Fixes
+
+* **idempotency:** allow to skip hash check with `bsm -f ...` ([83f69fd](https://github.com/UnderKoen/bsm/commit/83f69fdd387441df73f825d3c252f09f7ee6260f))
+* **idempotency:** wrong script hash being used ([e81d663](https://github.com/UnderKoen/bsm/commit/e81d663d8459536991a71f7168e798a534b505d0))
+
 ## [1.6.1](https://github.com/UnderKoen/bsm/compare/v1.6.0...v1.6.1) (2025-03-04)
 
 
