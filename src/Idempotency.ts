@@ -48,21 +48,25 @@ export class Idempotency {
     hash: ReturnType<typeof createHash>,
     dir: string,
   ): void {
-    fs.readdirSync(dir, {
-      withFileTypes: true,
-      recursive: true,
-    }).forEach((file) => {
-      // Is for node 18
-      /* eslint-disable */
-      /* c8 ignore next 3 */
-      if (file.name == null) return;
-      const fullPath = path
-        .join(file.path ?? dir, file.name)
-        .replace(/\\/g, "/");
-      /* eslint-enable */
-      hash.update(fullPath);
-      if (file.isFile()) this.updateHashForFile(hash, fullPath);
-    });
+    try {
+      fs.readdirSync(dir, {
+        withFileTypes: true,
+        recursive: true,
+      }).forEach((file) => {
+        // Is for node 18
+        /* eslint-disable */
+        /* c8 ignore next 3 */
+        if (file.name == null) return;
+        const fullPath = path
+          .join(file.path ?? dir, file.name)
+          .replace(/\\/g, "/");
+        /* eslint-enable */
+        hash.update(fullPath);
+        if (file.isFile()) this.updateHashForFile(hash, fullPath);
+      });
+    } catch {
+      // Directory does not exist
+    }
   }
 
   public static calculateIdempotencyHash(
