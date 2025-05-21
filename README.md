@@ -546,8 +546,6 @@ In version `1.0.1` and above we try to detect this and fix it automatically.
 
 - [ ] Have support for workspaces / lerna
 - [ ] Have support for running scripts in parallel
-- [ ] Have support for specifying environment variables
-- [ ] Have support for an interactive mode
 - [ ] Jetbrains and VSCode integration
 
 ## License

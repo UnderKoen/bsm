@@ -187,6 +187,24 @@ calculateIdempotencyHashSuite("should return hash for dir", () => {
   );
 });
 
+calculateIdempotencyHashSuite(
+  "should return hash for non exisiting dir",
+  () => {
+    // Arrange
+
+    // Act
+    const result = Idempotency.calculateIdempotencyHash(
+      "dir:./test/fixtures/non-existing-dir",
+    );
+
+    // Assert
+    assert.equal(
+      result,
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    );
+  },
+);
+
 calculateIdempotencyHashSuite("should work for unknown type", () => {
   // Arrange
 

@@ -34,18 +34,13 @@ function getNpmBin(): string[] {
 
 function getScript(scripts: TScript, name: string[]): TScript | undefined {
   if (name.length === 0) return scripts;
+  if (typeof scripts !== "object") return undefined;
 
   const sub = name[0];
+  const script = Executor.subscript(scripts, sub, false);
+  if (!script) return undefined;
 
-  if (typeof scripts !== "object") return undefined;
-  if (!Object.hasOwn(scripts, sub)) return undefined;
-
-  if (Array.isArray(scripts)) {
-    const i = parseInt(sub);
-    return getScript(scripts[i], name.slice(1));
-  } else {
-    return getScript(scripts[sub], name.slice(1));
-  }
+  return getScript(script[1], name.slice(1));
 }
 
 export class Cli {

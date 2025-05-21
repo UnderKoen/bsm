@@ -208,33 +208,21 @@ class Executor {
           },
         );
       }
-      return;
     } else {
       const sub = script[0];
-      const element = context[parseInt(sub)] as TScript | undefined;
+      const subscript = Executor.subscript(context, sub);
 
-      if (element === undefined) {
-        const alias = Executor.subscriptWithAlias(context, sub);
-        if (alias) {
-          await Executor.runScript(
-            alias[1],
-            script.slice(1),
-            [...path, alias[0]],
-            options,
-          );
-          return;
-        } else {
-          await Executor.notFound([...path, sub], options, context);
-          return;
-        }
+      if (subscript) {
+        await Executor.runScript(
+          subscript[1],
+          script.slice(1),
+          [...path, subscript[0]],
+          options,
+        );
+      } else {
+        await Executor.notFound([...path, sub], options, context);
+        return;
       }
-
-      await Executor.runScript(
-        element,
-        script.slice(1),
-        [...path, sub],
-        options,
-      );
     }
   }
 
@@ -302,26 +290,18 @@ class Executor {
         }
       } else {
         const sub = script[0];
-        if (Object.hasOwn(context, sub)) {
+        const subscript = Executor.subscript(context, sub);
+
+        if (subscript) {
           await Executor.runScript(
-            context[sub],
+            subscript[1],
             script.slice(1),
-            [...path, sub],
+            [...path, subscript[0]],
             options,
           );
         } else {
-          const alias = Executor.subscriptWithAlias(context, sub);
-          if (alias) {
-            await Executor.runScript(
-              alias[1],
-              script.slice(1),
-              [...path, alias[0]],
-              options,
-            );
-          } else {
-            await Executor.notFound([...path, sub], options, context);
-            return;
-          }
+          await Executor.notFound([...path, sub], options, context);
+          return;
         }
       }
 
@@ -352,31 +332,76 @@ class Executor {
     }
   }
 
-  static subscriptWithAlias(
+  static subscript(
+    context: TScripts | TScript[],
+    script: string,
+    checkAlias = true,
+  ): [string, TScript] | undefined {
+    if (typeof context !== "object") return undefined;
+
+    if (!Object.hasOwn(context, script)) {
+      script =
+        (function findAlternative(): string | undefined {
+          if (ConfigLoader.config.config?.caseInsensitive) {
+            const otherCase = Object.keys(context).find(
+              (k) => k.toLowerCase() === script.toLowerCase(),
+            );
+            if (otherCase) return otherCase;
+          }
+
+          if (checkAlias) {
+            const alias = Executor.resolveAlias(context, script);
+            if (alias) return alias;
+          }
+
+          return undefined;
+        })() ?? script;
+    }
+
+    if (!Object.hasOwn(context, script)) return undefined;
+
+    if (Array.isArray(context)) {
+      const i = parseInt(script);
+      return [script, context[i]];
+    } else {
+      return [script, context[script]];
+    }
+  }
+
+  static resolveAlias(
     context: TScripts | TScript[],
     alias: string,
-  ): [string, TScript] | undefined {
-    for (const entry of Object.entries(context)) {
-      const script = entry[1];
+  ): string | undefined {
+    for (const [key, script] of Object.entries(context)) {
       if (typeof script !== "object") continue;
       if (Array.isArray(script)) continue;
 
-      if (Object.hasOwn(script, "$alias")) {
-        const aliases = script["$alias"];
+      if (!Object.hasOwn(script, "$alias")) continue;
+      const aliases = Executor.getAliases(script["$alias"]);
 
-        if (typeof aliases === "string") {
-          if (aliases === alias) {
-            return entry;
-          }
-        } else if (Array.isArray(aliases)) {
-          if (aliases.includes(alias)) {
-            return entry;
-          }
-        }
+      if (
+        aliases.includes(alias) ||
+        (ConfigLoader.config.config?.caseInsensitive &&
+          aliases.map((s) => s.toLowerCase()).includes(alias.toLowerCase()))
+      ) {
+        return key;
       }
     }
 
     return undefined;
+  }
+
+  static getAliases(this: void, alias: TScript | undefined): string[] {
+    if (typeof alias === "string") {
+      return [alias];
+    } else if (Array.isArray(alias)) {
+      return alias.flatMap(Executor.getAliases);
+    } else {
+      console.error(
+        `\x1b[31mAlias with type ${typeof alias} is not supported\x1b[0m`,
+      );
+      return [];
+    }
   }
 
   static getEnv(context: TScript): Record<string, string> {

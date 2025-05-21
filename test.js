@@ -205,6 +205,29 @@ module.exports = {
           _default: "echo disabled",
         },
       },
+      caseInsensitive: {
+        $env: {
+          BSM_CASE_INSENSITIVE: "TRUE",
+        },
+        _default: "bsm ~.*",
+        shouldPrioritiseExactMatch: {
+          _default: "bsm ~.test",
+          TEST: "echo incorrect",
+          test: "echo correct",
+        },
+        shouldUseFirstIfNoExactMatch: {
+          _default: "bsm ~.test",
+          TEST: "echo correct",
+          TEst: "echo incorrect",
+        },
+        shouldWorkWithAliases: {
+          _default: "bsm ~.n",
+          alias: {
+            $alias: "N",
+            _default: "echo correct",
+          },
+        },
+      },
     },
   },
   config: {
@@ -212,5 +235,6 @@ module.exports = {
       useFileContent: false,
       location: process.env.BSM_IDEM_LOC,
     },
+    caseInsensitive: process.env.BSM_CASE_INSENSITIVE === "TRUE",
   },
 };

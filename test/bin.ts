@@ -22,6 +22,7 @@ const commands = [
   "testing.debug",
   "testing.alias",
   "testing.idempotency",
+  "testing.caseInsensitive",
 ];
 
 for (const command of commands) {

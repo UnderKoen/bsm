@@ -40,6 +40,12 @@ export default tseslint.config([
       ],
       "@typescript-eslint/no-require-imports": "off",
       "@typescript-eslint/restrict-template-expressions": "off",
+      "@typescript-eslint/no-invalid-void-type": [
+        "error",
+        {
+          allowAsThisParameter: true,
+        },
+      ],
     },
   },
 ]);

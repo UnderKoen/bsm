@@ -1,0 +1,12 @@
+exitcode: 0
+
+> bsm ~.* [90m(testing.caseInsensitive._default)[0m
+> bsm ~.test [90m(testing.caseInsensitive.shouldPrioritiseExactMatch._default)[0m
+> echo correct [90m(testing.caseInsensitive.shouldPrioritiseExactMatch.test)[0m
+correct
+> bsm ~.test [90m(testing.caseInsensitive.shouldUseFirstIfNoExactMatch._default)[0m
+> echo correct [90m(testing.caseInsensitive.shouldUseFirstIfNoExactMatch.TEST)[0m
+correct
+> bsm ~.n [90m(testing.caseInsensitive.shouldWorkWithAliases._default)[0m
+> echo correct [90m(testing.caseInsensitive.shouldWorkWithAliases.alias._default)[0m
+correct

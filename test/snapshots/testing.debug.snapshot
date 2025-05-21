@@ -28,6 +28,7 @@ bsm --debug scripts
 bsm --debug extends
 bsm ~.n ~.l ~.ls ~.d.n ~.list.test
 bsm ~.* && bsm ~.*
+bsm ~.*
 echo hooks1
 echo hooks2
 echo pre test
@@ -62,10 +63,18 @@ echo notExistingFile
 echo file
 echo dir
 echo disabled
+bsm ~.test
+echo incorrect
+echo correct
+bsm ~.test
+echo correct
+echo incorrect
+bsm ~.n
 echo $BSM_PATH
 echo %BSM_PATH%
 echo testing.debug
 echo deep normal
+echo correct
 echo test
 echo new
 > bsm --debug extends [90m(testing.debug.extends)[0m

@@ -6,6 +6,7 @@ export interface TConfig {
   config?: {
     defaultHelpBehavior?: "help" | "interactive";
     defaultNoArgsBehavior?: "help" | "interactive";
+    caseInsensitive?: boolean;
     idempotency?: {
       location?: string;
       useFileContent?: boolean;
