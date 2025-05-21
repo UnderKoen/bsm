@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/UnderKoen/bsm/compare/v1.6.2...v1.7.0) (2025-05-21)
+
+
+### Features
+
+* config option for caseInsensitive mode ([26a6593](https://github.com/UnderKoen/bsm/commit/26a6593389205db09ff2716232094161faf162d5))
+
 ## [1.6.2](https://github.com/UnderKoen/bsm/compare/v1.6.1...v1.6.2) (2025-03-04)
 
 
