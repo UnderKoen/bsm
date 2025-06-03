@@ -5,15 +5,17 @@ import minimist from "minimist";
 import { ConfigLoader } from "./ConfigLoader";
 import { Cli } from "./Cli";
 import { BsmError, BsmFunctionError } from "./BsmError";
+import { Logger } from "./Logger";
 
 const argv = minimist(process.argv.slice(2), {
   "--": true,
-  boolean: ["interactive", "help", "version"],
+  boolean: ["interactive", "help", "version", "silent"],
   alias: {
     help: "h",
     version: "v",
     interactive: "i",
     force: "f",
+    silent: "s",
   },
 });
 
@@ -31,19 +33,19 @@ export async function main() {
 if (process.env.NODE_ENV !== "test")
   main().catch((c: unknown) => {
     if (c instanceof BsmFunctionError) {
-      console.error(c.func);
-      console.error(`\x1b[31mError executing function '${c.script}'\x1b[0m`);
+      Logger.error(c.func);
+      Logger.error(`\x1b[31mError executing function '${c.script}'\x1b[0m`);
       process.exit(1);
     }
 
     if (c instanceof BsmError) {
-      console.error(
+      Logger.error(
         `\x1b[31mScript failed with code ${c.code}\x1b[0m \x1b[90m(${c.script})\x1b[0m`,
       );
       process.exit(c.code);
     }
 
-    console.error(c);
-    console.error(`\x1b[31mScript failed\x1b[0m`);
+    Logger.error(c);
+    Logger.error(`\x1b[31mScript failed\x1b[0m`);
     process.exit(1);
   });

@@ -1,17 +1,18 @@
 import { TConfig, TScript } from "./types";
 import minimist from "minimist";
+import { Logger } from "./Logger";
 
 class Help {
   static printHelp(config: TConfig, argv: minimist.ParsedArgs): void {
     const helps: string[] = argv._;
     if (helps.length === 0) {
       //Printing all commands
-      console.log(`\n\x1b[1mAvailable commands:\x1b[0m`);
+      Logger.log(`\n\x1b[1mAvailable commands:\x1b[0m`);
       Help.printCommands(config.scripts);
     } else {
       // TODO clean up this mess
       for (const help of helps) {
-        console.log(`\n\x1b[1mAvailable commands: \x1b[90m${help}\x1b[0m`);
+        Logger.log(`\n\x1b[1mAvailable commands: \x1b[90m${help}\x1b[0m`);
         const path = help.split(".");
 
         const todo: [TScript, string[], string[]][] = [
@@ -90,12 +91,12 @@ class Help {
 
   static printCommand(scripts: TScript | undefined, path: string[]) {
     if (scripts === undefined) {
-      console.error(`\x1b[31mScript '${path.join(".")}' not found\x1b[0m`);
+      Logger.error(`\x1b[31mScript '${path.join(".")}' not found\x1b[0m`);
       return;
     }
 
     const out = Help.getCommandHelp(scripts, path);
-    if (out) console.log(out);
+    if (out) Logger.log(out);
   }
 
   static getCommandHelp(scripts: TScript, path: string[]): string | undefined {
@@ -125,7 +126,7 @@ class Help {
       version: string;
     };
 
-    console.log(packageJson.version);
+    Logger.log(packageJson.version);
     process.exit(0);
   }
 }

@@ -8,6 +8,7 @@ import { Interactive } from "./Interactive";
 import { ConfigLoader } from "./ConfigLoader";
 import { Idempotency } from "./Idempotency";
 import { BsmError, BsmFunctionError } from "./BsmError";
+import { Logger } from "./Logger";
 
 export type Options = {
   excludeArgs?: true;
@@ -58,9 +59,9 @@ class Executor {
       const rest = path.slice(0, -1);
 
       if (rest.length === 0) {
-        console.error(`\x1b[31mScript '${sub}' does not exist\x1b[0m`);
+        Logger.error(`\x1b[31mScript '${sub}' does not exist\x1b[0m`);
       } else {
-        console.error(
+        Logger.error(
           `\x1b[31mScript '${rest.join(
             ".",
           )}' does not have a '${sub}' script\x1b[0m`,
@@ -78,18 +79,18 @@ class Executor {
         await this.run(scripts[0]);
         process.exit(0);
       } else {
-        console.log();
+        Logger.log();
         if (Object.hasOwn(context, "$description")) {
           Help.printCommand(context, rest);
-          console.log();
+          Logger.log();
         }
 
-        console.log(`\x1b[1mTry one of the following:\x1b[0m`);
+        Logger.log(`\x1b[1mTry one of the following:\x1b[0m`);
 
         Help.printCommands(context, rest, false);
       }
     } else {
-      console.error(`\x1b[31mScript '${path.join(".")}' not found\x1b[0m`);
+      Logger.error(`\x1b[31mScript '${path.join(".")}' not found\x1b[0m`);
     }
     process.exit(127);
   }
@@ -100,7 +101,7 @@ class Executor {
     path: string[],
     options: Options,
   ): Promise<void> {
-    console.log(
+    Logger.log(
       `> \x1b[93mExecuting JavaScript function\x1b[0m \x1b[90m(${[...path].join(
         ".",
       )})\x1b[0m`,
@@ -155,7 +156,7 @@ class Executor {
       context += " " + process.argv.join(" ");
     }
 
-    console.log(`> ${context} \x1b[90m(${path.join(".")})\x1b[0m`);
+    Logger.log(`> ${context} \x1b[90m(${path.join(".")})\x1b[0m`);
     if (process.env.BSM_LOG_FILE) {
       fs.appendFileSync(
         process.env.BSM_LOG_FILE,
@@ -239,7 +240,7 @@ class Executor {
         options,
       );
       if (isSame) {
-        console.log(
+        Logger.log(
           `\x1b[90mNot running ${[...path, ...script].join(".")} because the idempotency hash is the same\x1b[0m`,
         );
         return false;
@@ -397,7 +398,7 @@ class Executor {
     } else if (Array.isArray(alias)) {
       return alias.flatMap(Executor.getAliases);
     } else {
-      console.error(
+      Logger.error(
         `\x1b[31mAlias with type ${typeof alias} is not supported\x1b[0m`,
       );
       return [];
@@ -413,7 +414,7 @@ class Executor {
         const file = path.join(process.cwd(), context.slice(5));
 
         if (!fs.existsSync(file)) {
-          console.error(
+          Logger.error(
             `\x1b[31mFile '${file}' does not exist\x1b[0m\n` +
               "\x1b[1mRunning script without these environment variables\x1b[0m\n",
           );
@@ -451,7 +452,7 @@ class Executor {
         return env;
       } else {
         //TODO: support for other formats
-        console.error(
+        Logger.error(
           "\x1b[31mCurrently only 'file:' is supported for environment variables\x1b[0m\n",
         );
 

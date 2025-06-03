@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import { TScripts } from "./types";
 import { Options } from "./Executor";
+import { Logger } from "./Logger";
 
 type IdempotencyType = "file" | "dir" | "env" | "static";
 type IdempotencyKey = `${IdempotencyType}:${string}`;
@@ -112,7 +113,7 @@ export class Idempotency {
           this.updateHashForDir(hash, value);
           break;
         default:
-          console.log(
+          Logger.log(
             `\x1b[33m[Idempotency]\x1b[0m Unknown type: ${type as string}, using value as static`,
           );
           hash.update(key);

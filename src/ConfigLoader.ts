@@ -1,6 +1,7 @@
 import { ExtendConfig, TConfig } from "./types";
 import minimist from "minimist";
 import { defu } from "defu";
+import { Logger } from "./Logger";
 
 type AdvanceConfig = (...args: unknown[]) => TConfig | Promise<TConfig>;
 
@@ -64,15 +65,13 @@ export class ConfigLoader {
       ) {
         if (noBail) return undefined;
 
-        console.error(
-          `\x1b[31mCannot find config '${source}' to extend\x1b[0m`,
-        );
+        Logger.error(`\x1b[31mCannot find config '${source}' to extend\x1b[0m`);
         process.exit(1);
       } else {
-        console.error(e);
+        Logger.error(e);
 
         if (Array.isArray(file)) file = file[0];
-        console.error(`\x1b[31mError loading config '${file}'\x1b[0m`);
+        Logger.error(`\x1b[31mError loading config '${file}'\x1b[0m`);
         process.exit(1);
       }
     }
@@ -95,7 +94,7 @@ export class ConfigLoader {
       return config;
     }
 
-    console.error(
+    Logger.error(
       `\x1b[31mCannot find config ${possibleConfigFiles
         .map((s) => `'${s}'`)
         .join(" or ")}\x1b[0m`,

@@ -4,6 +4,7 @@ import { Help } from "./Help";
 import { ParsedArgs } from "minimist";
 import { Executor } from "./Executor";
 import path from "path";
+import { Logger } from "./Logger";
 
 function values(t: TScripts | TScript[]): TScript[] {
   if (Array.isArray(t)) return t;
@@ -50,6 +51,10 @@ export class Cli {
   ) {}
 
   async run() {
+    if (this.argv["silent"]) {
+      Logger.silence();
+    }
+
     this.handleDebug();
 
     if (this.argv["version"]) Help.printVersion();
@@ -98,9 +103,9 @@ export class Cli {
           if (ext) {
             for (const el of ext) {
               if (typeof el === "string") {
-                console.log(el);
+                Logger.log(el);
               } else {
-                console.log(el[0]);
+                Logger.log(el[0]);
               }
             }
           }
@@ -122,7 +127,7 @@ export class Cli {
             }
           }
 
-          console.log(all.join("\n"));
+          Logger.log(all.join("\n"));
           return process.exit(0);
         }
       }
