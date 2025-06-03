@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/UnderKoen/bsm/compare/v1.7.0...v1.8.0) (2025-06-03)
+
+
+### Features
+
+* allow bsm to be run silent and not output anything --silent or -s ([bc3e842](https://github.com/UnderKoen/bsm/commit/bc3e842caf4c0035e404fda32e3f5fa8705649b8))
+
 # [1.7.0](https://github.com/UnderKoen/bsm/compare/v1.6.2...v1.7.0) (2025-05-21)
 
 
