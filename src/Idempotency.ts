@@ -5,8 +5,9 @@ import path from "path";
 import { TScripts } from "./types";
 import { Options } from "./Executor";
 import { Logger } from "./Logger";
+import { globSync } from "glob";
 
-type IdempotencyType = "file" | "dir" | "env" | "static";
+type IdempotencyType = "file" | "dir" | "env" | "static" | "glob";
 type IdempotencyKey = `${IdempotencyType}:${string}`;
 
 export type IdempotencyConfig =
@@ -70,6 +71,27 @@ export class Idempotency {
     }
   }
 
+  private static updateHashForGlob(
+    hash: ReturnType<typeof createHash>,
+    glob: string,
+  ): void {
+    try {
+      const files = globSync(glob, { withFileTypes: true });
+      for (const file of files) {
+        // To ensure the hash is consistent across different environments,
+        const pth = path.relative(process.cwd(), file.fullpath());
+        if (file.isFile()) {
+          this.updateHashForFile(hash, pth);
+        } else {
+          this.updateHashForDir(hash, pth);
+        }
+      }
+      /* c8 ignore next 3 */
+    } catch {
+      // Unknown error, glob might not be valid or files might not exist
+    }
+  }
+
   public static calculateIdempotencyHash(
     config: IdempotencyConfig,
     options?: Options,
@@ -111,6 +133,9 @@ export class Idempotency {
           break;
         case "dir":
           this.updateHashForDir(hash, value);
+          break;
+        case "glob":
+          this.updateHashForGlob(hash, value);
           break;
         default:
           Logger.log(

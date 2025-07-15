@@ -172,6 +172,21 @@ calculateIdempotencyHashSuite("should return hash for file", () => {
   );
 });
 
+calculateIdempotencyHashSuite("should return hash for glob (file)", () => {
+  // Arrange
+
+  // Act
+  const result = Idempotency.calculateIdempotencyHash(
+    "glob:./test/fixtures/dir/*.txt",
+  );
+
+  // Assert
+  assert.equal(
+    result,
+    "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  );
+});
+
 calculateIdempotencyHashSuite("should return hash for dir", () => {
   // Arrange
 
@@ -184,6 +199,21 @@ calculateIdempotencyHashSuite("should return hash for dir", () => {
   assert.equal(
     result,
     "17fc10a9d8a53567484217c35fd1b12b593bb8e67e8e212833f5580a4c788be3",
+  );
+});
+
+calculateIdempotencyHashSuite("should return hash for glob (dir)", () => {
+  // Arrange
+
+  // Act
+  const result = Idempotency.calculateIdempotencyHash(
+    "glob:./test/fixtures/dir/*",
+  );
+
+  // Assert
+  assert.equal(
+    result,
+    "dedee9b6f8b5b132a556d97ad2ae60a82f7e6ffc8b4cb77d575a5568610eb38b",
   );
 });
 
@@ -555,6 +585,31 @@ executeObjectSuite("should work with an _catch", async () => {
   // Assert
   // We expect nothing to run additionally
   assert.equal(runScript.callCount, 2);
+});
+
+executeObjectSuite("should check BSM_DISABLE_IDEMPOTENCY env", async () => {
+  // Arrange
+  const runScript = sinon.stub(Executor, "runScript");
+  const checkIdempotency = sinon.stub(Idempotency, "checkIdempotency");
+
+  // Act
+  process.env.BSM_DISABLE_IDEMPOTENCY = "true";
+  await Executor.executeObject(
+    {
+      test: "test",
+      $idempotency: ["static:123"],
+    },
+    ["test"],
+    ["test"],
+    {},
+  );
+
+  // Assert
+  assert.equal(runScript.callCount, 1);
+  assert.equal(checkIdempotency.callCount, 0);
+
+  // Cleanup
+  delete process.env.BSM_DISABLE_IDEMPOTENCY;
 });
 
 executeObjectSuite.run();
