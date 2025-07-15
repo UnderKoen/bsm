@@ -1,6 +1,6 @@
 {
   "name": "@under_koen/bsm",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "BSM (Basic Script Manager) is a useful tool that enables you to create clear and concise scripts without cluttering your `package.json` file.",
   "license": "MIT",
   "author": "Koen van Staveren <koen@underkoen.nl>",

@@ -1,3 +1,10 @@
+# [1.9.0](https://github.com/UnderKoen/bsm/compare/v1.8.0...v1.9.0) (2025-07-15)
+
+
+### Features
+
+* allow glob in idempotency ([7543b00](https://github.com/UnderKoen/bsm/commit/7543b006faa2dadb563382ae9992130329fd7baa))
+
 # [1.8.0](https://github.com/UnderKoen/bsm/compare/v1.7.0...v1.8.0) (2025-06-03)
 
 
