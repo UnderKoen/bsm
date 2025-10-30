@@ -60,7 +60,7 @@ export class Idempotency {
         /* c8 ignore next 3 */
         if (file.name == null) return;
         const fullPath = path
-          .join(file.path ?? dir, file.name)
+          .join(file.parentPath ?? file.path ?? dir, file.name)
           .replace(/\\/g, "/");
         /* eslint-enable */
         hash.update(fullPath);
