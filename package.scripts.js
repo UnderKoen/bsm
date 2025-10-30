@@ -19,6 +19,7 @@ export default {
       },
       //TODO
       watch: "bsm ~ -- --watch",
+      _post: "cpy ./dist ./node_modules/@under_koen/bsm",
     },
     prettier: {
       $description: "Run all formatters",
@@ -44,7 +45,7 @@ export default {
         TEST: "TRUE",
         NODE_ENV: "test",
       },
-      _pre: ["bsm build", "cpy ./dist ./node_modules/@under_koen/bsm"],
+      _pre: "bsm build",
       _node18:
         "node --import tsx ./node_modules/uvu/bin.js test -i fixtures -i snapshots",
       _default:
