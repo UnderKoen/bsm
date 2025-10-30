@@ -2,10 +2,10 @@
 //TODO find a way to test this
 
 import { createPrompt, useState, useKeypress, useMemo } from "@inquirer/core";
-import { TConfig, TScript, TScripts } from "./types";
+import { TConfig, TScript, TScripts } from "./types.js";
 import minimist from "minimist";
-import { Help } from "./Help";
-import { Executor } from "./Executor";
+import { Help } from "./Help.js";
+import { Executor } from "./Executor.js";
 
 export class Interactive {
   static async selectScript(

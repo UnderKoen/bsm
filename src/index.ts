@@ -2,10 +2,9 @@
 
 import minimist from "minimist";
 
-import { ConfigLoader } from "./ConfigLoader";
-import { Cli } from "./Cli";
-import { BsmError, BsmFunctionError } from "./BsmError";
-import { Logger } from "./Logger";
+import { Cli } from "./Cli.js";
+import { BsmError, BsmFunctionError } from "./BsmError.js";
+import { Logger } from "./Logger.js";
 
 const argv = minimist(process.argv.slice(2), {
   "--": true,
@@ -23,9 +22,7 @@ const argv = minimist(process.argv.slice(2), {
 process.argv = argv["--"] ?? [];
 
 export async function main() {
-  const config = await ConfigLoader.load(argv);
-
-  const cli = new Cli(config, argv);
+  const cli = new Cli(argv);
 
   await cli.run();
 }

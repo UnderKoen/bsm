@@ -1,7 +1,8 @@
-import { ExtendConfig, TConfig } from "./types";
+import { ExtendConfig, TConfig } from "./types.js";
 import minimist from "minimist";
 import { defu } from "defu";
-import { Logger } from "./Logger";
+import { Logger } from "./Logger.js";
+import * as mlly from "mlly";
 
 type AdvanceConfig = (...args: unknown[]) => TConfig | Promise<TConfig>;
 
@@ -31,6 +32,12 @@ export class ConfigLoader {
     ).filter((c): c is TConfig => c !== undefined);
   }
 
+  static interopDefault(mod: unknown): unknown {
+    if (typeof mod !== "object" || mod === null) return mod;
+    if ("default" in mod) return mod.default;
+    return mod;
+  }
+
   static async loadFile(
     file: ExtendConfig | undefined,
     noBail = true,
@@ -39,11 +46,19 @@ export class ConfigLoader {
     let source = this.getSource(file);
 
     try {
-      source = require.resolve(source, {
-        paths: [process.cwd()],
-      });
+      source = await mlly.resolve(source);
+    } catch {
+      if (noBail) return undefined;
 
-      let config = require(source) as TConfig | AdvanceConfig;
+      Logger.error(`\x1b[31mCannot find config '${source}' to extend\x1b[0m`);
+      process.exit(1);
+    }
+
+    try {
+      let config = this.interopDefault(await import(source)) as
+        | TConfig
+        | AdvanceConfig;
+
       if (typeof config === "function") {
         config = await config(...(Array.isArray(file) ? file.slice(1) : []));
       }
@@ -52,28 +67,11 @@ export class ConfigLoader {
 
       return defu(config, ...configs, DEFAULT_CONFIG);
     } catch (e) {
-      const error = e as NodeJS.ErrnoException & { requireStack?: string[] };
+      Logger.error(e);
 
-      const path = error.requireStack?.[0]?.replaceAll("\\", "/");
-
-      if (
-        (error.code === "MODULE_NOT_FOUND" &&
-          path?.includes("bsm/dist/index.js")) ||
-        // For when running tests or with ts-node
-        (process.env.NODE_ENV !== "production" &&
-          path?.includes("bsm/src/ConfigLoader.ts"))
-      ) {
-        if (noBail) return undefined;
-
-        Logger.error(`\x1b[31mCannot find config '${source}' to extend\x1b[0m`);
-        process.exit(1);
-      } else {
-        Logger.error(e);
-
-        if (Array.isArray(file)) file = file[0];
-        Logger.error(`\x1b[31mError loading config '${file}'\x1b[0m`);
-        process.exit(1);
-      }
+      if (Array.isArray(file)) file = file[0];
+      Logger.error(`\x1b[31mError loading config '${file}'\x1b[0m`);
+      process.exit(1);
     }
   }
 
@@ -82,6 +80,8 @@ export class ConfigLoader {
       argv.config,
       process.env.BSM_CONFIG,
       "./package.scripts.js",
+      "./package.scripts.cjs",
+      "./package.scripts.mjs",
       "./package.scripts.json",
     ].filter((s): s is string => s !== undefined);
 

@@ -1,6 +1,8 @@
+import esbuild from "esbuild";
+
 const prod = process.env.PROD === "TRUE";
 
-require("esbuild").build({
+esbuild.build({
   entryPoints: ["./src/index.ts"],
   bundle: true,
   platform: "node",
@@ -11,4 +13,6 @@ require("esbuild").build({
   },
   minify: prod,
   sourcemap: !prod,
+  format: "esm",
+  external: ["@inquirer/core"],
 });

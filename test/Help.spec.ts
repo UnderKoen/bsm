@@ -1,11 +1,12 @@
 import { suite as _suite } from "uvu";
 import * as assert from "uvu/assert";
 import sinon from "sinon";
-import { Help } from "../src/Help";
+import { Help } from "../src/Help.js";
+import { Logger } from "../src/Logger.js";
 
 sinon.restore();
-let consoleLog = sinon.stub(console, "log");
-let consoleError = sinon.stub(console, "error");
+let consoleLog = sinon.stub(Logger, "log");
+let consoleError = sinon.stub(Logger, "error");
 
 function suite(name: string): ReturnType<typeof _suite> {
   const test = _suite(name);
@@ -13,8 +14,8 @@ function suite(name: string): ReturnType<typeof _suite> {
     sinon.restore();
 
     // Don't output anything
-    consoleLog = sinon.stub(console, "log");
-    consoleError = sinon.stub(console, "error");
+    consoleLog = sinon.stub(Logger, "log");
+    consoleError = sinon.stub(Logger, "error");
     process.argv = [];
   });
   return test;

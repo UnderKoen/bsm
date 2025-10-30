@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   extends: ["./test"],
   scripts: {
     $env: {
@@ -45,7 +45,8 @@ module.exports = {
         NODE_ENV: "test",
       },
       _pre: ["bsm build", "cpy ./dist ./node_modules/@under_koen/bsm"],
-      _default: "uvu -r tsm test -i fixtures",
+      _default:
+        "node --import tsx --import ./test/stack-filter.ts ./node_modules/uvu/bin.js test -i fixtures -i snapshots",
       cov: "c8 bsm ~ --",
     },
     env: () => {

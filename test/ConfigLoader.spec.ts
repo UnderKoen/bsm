@@ -1,12 +1,12 @@
 import { suite as _suite } from "uvu";
 import * as assert from "uvu/assert";
 import sinon from "sinon";
-import { ConfigLoader, DEFAULT_CONFIG } from "../src/ConfigLoader";
-import { ExtendConfig, TConfig } from "../src/types";
+import { ConfigLoader, DEFAULT_CONFIG } from "../src/ConfigLoader.js";
+import { ExtendConfig, TConfig } from "../src/types.js";
+import { Logger } from "../src/Logger.js";
 
 sinon.restore();
-sinon.stub(console, "log");
-sinon.stub(console, "error");
+Logger.silence();
 
 function suite(name: string): ReturnType<typeof _suite> {
   const test = _suite(name);
@@ -14,8 +14,7 @@ function suite(name: string): ReturnType<typeof _suite> {
     sinon.restore();
 
     // Don't output anything
-    sinon.stub(console, "log");
-    sinon.stub(console, "error");
+    Logger.silence();
     process.argv = [];
   });
   return test;
@@ -46,7 +45,6 @@ getSource("should return first arg if it is an array", () => {
   assert.is(source, arg[0]);
 });
 
-getSource.run();
 //endregion
 
 //region loadFile
@@ -155,7 +153,56 @@ loadFile("config with args should exit if not found", async () => {
   assert.is(exit.callCount, 1);
 });
 
-loadFile.run();
+loadFile("should load explicit commonjs config file", async () => {
+  //Arrange
+  const exit = sinon.stub(process, "exit");
+
+  //Act
+  const config = await ConfigLoader.loadFile("./test/fixtures/cjs");
+
+  //Assert
+  assert.equal(config, {
+    ...DEFAULT_CONFIG,
+    scripts: {
+      test: "cjs",
+    },
+  });
+  assert.is(exit.callCount, 0);
+});
+
+loadFile("should load explicit esm config file", async () => {
+  //Arrange
+  const exit = sinon.stub(process, "exit");
+
+  //Act
+  const config = await ConfigLoader.loadFile("./test/fixtures/esm");
+
+  //Assert
+  assert.equal(config, {
+    ...DEFAULT_CONFIG,
+    scripts: {
+      test: "esm",
+    },
+  });
+  assert.is(exit.callCount, 0);
+});
+
+loadFile("should be able to export scripts only", async () => {
+  //Arrange
+  const exit = sinon.stub(process, "exit");
+
+  //Act
+  const config = await ConfigLoader.loadFile("./test/fixtures/scripts-only");
+
+  //Assert
+  assert.equal(config, {
+    ...DEFAULT_CONFIG,
+    scripts: {
+      test: "scripts-only",
+    },
+  });
+  assert.is(exit.callCount, 0);
+});
 
 //endregion
 
@@ -229,8 +276,6 @@ loadExtensions("should return array of configs", async () => {
   assert.is(configs.length, 3);
   assert.equal(configs[0], DEFAULT_CONFIG);
 });
-
-loadExtensions.run();
 
 //endregion
 
@@ -345,6 +390,9 @@ load("should throw if ConfigLoader.config is not set", () => {
   assert.throws(fn, "Config not loaded");
 });
 
-load.run();
-
 //endregion
+
+// getSource.run();
+loadFile.run();
+// loadExtensions.run();
+// load.run();

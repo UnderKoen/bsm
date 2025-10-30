@@ -1,16 +1,17 @@
 import { suite as _suite } from "uvu";
 import * as assert from "uvu/assert";
 import sinon from "sinon";
-import { ConfigLoader } from "../src/ConfigLoader";
-import { Idempotency } from "../src/Idempotency";
+import { ConfigLoader } from "../src/ConfigLoader.js";
+import { Idempotency } from "../src/Idempotency.js";
 import fs from "fs";
-import { Executor } from "../src/Executor";
+import { Executor } from "../src/Executor.js";
+import { Logger } from "../src/Logger.js";
 
 sinon.restore();
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-let consoleLog = sinon.stub(console, "log");
+let consoleLog = sinon.stub(Logger, "log");
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-let consoleError = sinon.stub(console, "error");
+let consoleError = sinon.stub(Logger, "error");
 
 function suite(name: string): ReturnType<typeof _suite> {
   const test = _suite(name);
@@ -18,8 +19,8 @@ function suite(name: string): ReturnType<typeof _suite> {
     sinon.restore();
 
     // Don't output anything
-    consoleLog = sinon.stub(console, "debug");
-    consoleError = sinon.stub(console, "warn");
+    consoleLog = sinon.stub(Logger, "log");
+    consoleError = sinon.stub(Logger, "error");
     process.argv = [];
 
     // Set config to default

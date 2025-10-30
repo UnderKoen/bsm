@@ -1,10 +1,11 @@
-import { TConfig, TScript, TScripts } from "./types";
-import { Interactive } from "./Interactive";
-import { Help } from "./Help";
+import { TConfig, TScript, TScripts } from "./types.js";
+import { Interactive } from "./Interactive.js";
+import { Help } from "./Help.js";
 import { ParsedArgs } from "minimist";
-import { Executor } from "./Executor";
+import { Executor } from "./Executor.js";
 import path from "path";
-import { Logger } from "./Logger";
+import { Logger } from "./Logger.js";
+import { ConfigLoader } from "./ConfigLoader.js";
 
 function values(t: TScripts | TScript[]): TScript[] {
   if (Array.isArray(t)) return t;
@@ -45,19 +46,20 @@ function getScript(scripts: TScript, name: string[]): TScript | undefined {
 }
 
 export class Cli {
-  constructor(
-    public readonly config: TConfig,
-    public readonly argv: ParsedArgs,
-  ) {}
+  public config!: TConfig;
+
+  constructor(public readonly argv: ParsedArgs) {}
 
   async run() {
     if (this.argv["silent"]) {
       Logger.silence();
     }
 
-    this.handleDebug();
-
     if (this.argv["version"]) Help.printVersion();
+
+    this.config = await ConfigLoader.load(this.argv);
+
+    this.handleDebug();
     if (this.argv["help"]) Help.printHelp(this.config, this.argv);
     if (this.argv["interactive"]) {
       this.argv._ = await Interactive.selectScript(this.config, this.argv);

@@ -1,6 +1,7 @@
-import { TConfig, TScript } from "./types";
+import { TConfig, TScript } from "./types.js";
 import minimist from "minimist";
-import { Logger } from "./Logger";
+import { Logger } from "./Logger.js";
+import packageJson from "../package.json" with { type: "json" };
 
 class Help {
   static printHelp(config: TConfig, argv: minimist.ParsedArgs): void {
@@ -122,10 +123,6 @@ class Help {
   }
 
   static printVersion(): void {
-    const packageJson = require("../package.json") as {
-      version: string;
-    };
-
     Logger.log(packageJson.version);
     process.exit(0);
   }

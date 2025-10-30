@@ -1,14 +1,14 @@
-import { TFunction, TScript, TScripts } from "./types";
+import { TFunction, TScript, TScripts } from "./types.js";
 import child_process from "node:child_process";
 import { isCI } from "ci-info";
-import { Help } from "./Help";
+import { Help } from "./Help.js";
 import path from "path";
 import fs from "fs";
-import { Interactive } from "./Interactive";
-import { ConfigLoader } from "./ConfigLoader";
-import { Idempotency } from "./Idempotency";
-import { BsmError, BsmFunctionError } from "./BsmError";
-import { Logger } from "./Logger";
+import { Interactive } from "./Interactive.js";
+import { ConfigLoader } from "./ConfigLoader.js";
+import { Idempotency } from "./Idempotency.js";
+import { BsmError, BsmFunctionError } from "./BsmError.js";
+import { Logger } from "./Logger.js";
 
 export type Options = {
   excludeArgs?: true;

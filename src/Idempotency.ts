@@ -1,10 +1,10 @@
 import { createHash } from "node:crypto";
-import { ConfigLoader } from "./ConfigLoader";
+import { ConfigLoader } from "./ConfigLoader.js";
 import fs from "fs";
 import path from "path";
-import { TScripts } from "./types";
-import { Options } from "./Executor";
-import { Logger } from "./Logger";
+import { TScripts } from "./types.js";
+import { Options } from "./Executor.js";
+import { Logger } from "./Logger.js";
 import { globSync } from "glob";
 
 type IdempotencyType = "file" | "dir" | "env" | "static" | "glob";
