@@ -1,3 +1,10 @@
+## [1.10.1](https://github.com/UnderKoen/bsm/compare/v1.10.0...v1.10.1) (2025-10-30)
+
+
+### Bug Fixes
+
+* define external dependencies ([6a4623e](https://github.com/UnderKoen/bsm/commit/6a4623e80e6329d211e6b919ef64aea118fb2371))
+
 # [1.10.0](https://github.com/UnderKoen/bsm/compare/v1.9.0...v1.10.0) (2025-10-30)
 
 
