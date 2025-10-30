@@ -1,3 +1,16 @@
+# [1.10.0](https://github.com/UnderKoen/bsm/compare/v1.9.0...v1.10.0) (2025-10-30)
+
+
+### Bug Fixes
+
+* support for esm ([891f4ba](https://github.com/UnderKoen/bsm/commit/891f4bae3993b8bab21b0e64a51c5ee8076bfc19))
+* support for node v24 ([61b03d9](https://github.com/UnderKoen/bsm/commit/61b03d9888d5fceb9d628f2182eb8bd991f43029))
+
+
+### Features
+
+* add _node{major}_{minor}_{patch} ([2eb8c60](https://github.com/UnderKoen/bsm/commit/2eb8c602b049fef1fb576b9f8961ec652cf4e341))
+
 # [1.9.0](https://github.com/UnderKoen/bsm/compare/v1.8.0...v1.9.0) (2025-07-15)
 
 
