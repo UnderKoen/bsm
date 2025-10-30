@@ -504,9 +504,14 @@ class Executor {
   }
 
   static get objectScripts(): string[] {
+    const [major, minor, patch] = process.versions.node.split(".");
+
     const scriptNames = [
       `_${process.platform}`,
       `_${process.arch}`,
+      `_node${major}_${minor}_${patch}`,
+      `_node${major}_${minor}`,
+      `_node${major}`,
       "_default",
     ];
     if (Executor._isCI) {
