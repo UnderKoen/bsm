@@ -1,5 +1,5 @@
 export default {
-  extends: ["./test"],
+  extends: ["./test.js"],
   scripts: {
     $env: {
       BSM_LOG_FILE: "./test.log",

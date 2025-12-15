@@ -46,7 +46,10 @@ export class ConfigLoader {
     let source = this.getSource(file);
 
     try {
-      source = await mlly.resolve(source);
+      // Fix resolving parents configs, https://github.com/unjs/mlly/pull/307
+      source = await mlly.resolve(source, {
+        url: process.cwd() + "/",
+      });
     } catch {
       if (noBail) return undefined;
 
