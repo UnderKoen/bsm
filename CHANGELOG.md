@@ -1,3 +1,10 @@
+## [1.10.2](https://github.com/UnderKoen/bsm/compare/v1.10.1...v1.10.2) (2025-12-15)
+
+
+### Bug Fixes
+
+* resolving parents folder scripts ([fa4f085](https://github.com/UnderKoen/bsm/commit/fa4f085c7b65a42c15fa0e0d29fa5cc2f99984b0))
+
 ## [1.10.1](https://github.com/UnderKoen/bsm/compare/v1.10.0...v1.10.1) (2025-10-30)
 
 
