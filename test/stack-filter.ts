@@ -1,3 +1,4 @@
+/* eslint-disable */
 const originalPrepareStackTrace = Error.prepareStackTrace;
 
 Error.prepareStackTrace = (err, stackTraces) => {
@@ -7,7 +8,6 @@ Error.prepareStackTrace = (err, stackTraces) => {
     return !fileName.match(/node_modules[/\\]uvu/g);
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   return originalPrepareStackTrace
     ? originalPrepareStackTrace(err, filtered)
     : `${err}\n${filtered.join("\n")}`;

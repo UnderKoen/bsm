@@ -19,6 +19,13 @@ echo 2
 echo 3
 echo pre hooks
 echo post
+echo should be ignored
+echo pre default
+bsm ~.test
+echo pre test
+echo test
+echo for all expect "test"
+echo for test
 bsm ~.test
 echo test
 bsm ~.*

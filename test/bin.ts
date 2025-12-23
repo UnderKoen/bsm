@@ -10,6 +10,7 @@ const commands = [
   "testing.args -- WOWOWOW",
   "testing.array",
   "testing.hooks",
+  "testing.specificHooks",
   "testing.relative",
   "testing.error.onError",
   "testing.error.catch",

@@ -17,14 +17,14 @@ file
 dir
 > echo disabled [90m(testing.idempotency.disabled._default)[0m
 disabled
-[90mNot running testing.idempotency.static because the idempotency hash is the same[0m
+[90mNot running testing.idempotency.static._default because the idempotency hash is the same[0m
 > echo static random [90m(testing.idempotency.staticRnd._default)[0m
 static random
-[90mNot running testing.idempotency.env because the idempotency hash is the same[0m
+[90mNot running testing.idempotency.env._default because the idempotency hash is the same[0m
 > echo env random [90m(testing.idempotency.envRnd._default)[0m
 env random
-[90mNot running testing.idempotency.notExistingFile because the idempotency hash is the same[0m
-[90mNot running testing.idempotency.file because the idempotency hash is the same[0m
-[90mNot running testing.idempotency.dir because the idempotency hash is the same[0m
+[90mNot running testing.idempotency.notExistingFile._default because the idempotency hash is the same[0m
+[90mNot running testing.idempotency.file._default because the idempotency hash is the same[0m
+[90mNot running testing.idempotency.dir._default because the idempotency hash is the same[0m
 > echo disabled [90m(testing.idempotency.disabled._default)[0m
 disabled

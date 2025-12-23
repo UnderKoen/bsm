@@ -250,6 +250,15 @@ class Executor {
     return true;
   }
 
+  static getObjectRunnerScriptName(context: TScripts): string | undefined {
+    for (const script of Executor.objectScripts) {
+      if (Object.hasOwn(context, script)) {
+        return script;
+      }
+    }
+    return undefined;
+  }
+
   static async executeObject(
     context: TScripts,
     script: string[],
@@ -264,16 +273,25 @@ class Executor {
         };
       }
 
+      if (script.length === 0) {
+        const scriptName = Executor.getObjectRunnerScriptName(context);
+
+        if (scriptName) {
+          script = [scriptName];
+        } else {
+          await Executor.notFound([...path, "_default"], options, context);
+          return;
+        }
+      }
+
       if (!Executor.shouldRun(context, script, path, options)) {
         return;
       }
 
       //TODO don't execute when command is not found
-      await Executor.executeHook(context, "_pre", path, options);
+      await Executor.executeHook(context, "_pre", script, path, options);
 
-      if (script.length === 0) {
-        await Executor.runObject(context, path, options);
-      } else if (script[0] === "*") {
+      if (script[0] === "*") {
         for (const key in context) {
           if (key.startsWith("_")) continue;
           if (key.startsWith("$")) continue;
@@ -306,7 +324,7 @@ class Executor {
         }
       }
 
-      await Executor.executeHook(context, "_post", path, options);
+      await Executor.executeHook(context, "_post", script, path, options);
 
       if (Idempotency.hasIdempotencyEnabled(context)) {
         Idempotency.saveIdempotency(context, [...path, ...script]);
@@ -318,9 +336,11 @@ class Executor {
         process.env.BSM_ERROR = "1";
       }
 
-      await Executor.executeHook(context, "_onError", path, options);
+      await Executor.executeHook(context, "_onError", script, path, options);
 
-      if (!(await Executor.executeHook(context, "_catch", path, options))) {
+      if (
+        !(await Executor.executeHook(context, "_catch", script, path, options))
+      ) {
         throw e;
       }
 
@@ -329,7 +349,7 @@ class Executor {
         Idempotency.saveIdempotency(context, [...path, ...script]);
       }
     } finally {
-      await Executor.executeHook(context, "_finally", path, options);
+      await Executor.executeHook(context, "_finally", script, path, options);
     }
   }
 
@@ -480,20 +500,32 @@ class Executor {
     }
   }
 
+  static getHookName(hook: string, script: string[]): string[] {
+    if (script.length === 0) return [hook];
+
+    return [`${hook}_${script[0]}`, hook];
+  }
+
   static async executeHook(
     context: TScripts,
     hook: string,
+    script: string[],
     path: string[],
     options: Options,
   ): Promise<boolean> {
-    if (!Object.hasOwn(context, hook)) return false;
+    const hookNames = Executor.getHookName(hook, script);
+    for (const hookName of hookNames) {
+      if (!Object.hasOwn(context, hookName)) continue;
 
-    await Executor.runScript(context[hook], [], [...path, hook], {
-      ...options,
-      excludeArgs: true,
-    });
+      await Executor.runScript(context[hookName], [], [...path, hookName], {
+        ...options,
+        excludeArgs: true,
+      });
 
-    return true;
+      return true;
+    }
+
+    return false;
   }
 
   /**

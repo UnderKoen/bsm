@@ -1,0 +1,13 @@
+exitcode: 0
+
+> echo pre default [90m(testing.specificHooks._pre__default)[0m
+pre default
+> bsm ~.test [90m(testing.specificHooks._default)[0m
+> echo pre test [90m(testing.specificHooks._pre_test)[0m
+pre test
+> echo test [90m(testing.specificHooks.test)[0m
+test
+> echo for test [90m(testing.specificHooks._post_test)[0m
+for test
+> echo for all expect "test" [90m(testing.specificHooks._post)[0m
+for all expect "test"

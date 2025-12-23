@@ -36,6 +36,15 @@ export default {
           _catch: "",
         },
       },
+      specificHooks: {
+        _pre: "echo should be ignored",
+        _pre__default: "echo pre default",
+        _default: "bsm ~.test",
+        _pre_test: "echo pre test",
+        test: "echo test",
+        _post: 'echo for all expect "test"',
+        _post_test: "echo for test",
+      },
       relative: {
         _default: "bsm ~.test",
         test: "echo test",
