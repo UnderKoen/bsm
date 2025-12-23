@@ -42,7 +42,7 @@ export default {
         _default: "bsm ~.test",
         _pre_test: "echo pre test",
         test: "echo test",
-        _post: 'echo for all expect "test"',
+        _post: "echo for all expect test",
         _post_test: "echo for test",
       },
       relative: {

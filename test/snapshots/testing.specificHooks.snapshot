@@ -9,5 +9,5 @@ pre test
 test
 > echo for test [90m(testing.specificHooks._post_test)[0m
 for test
-> echo for all expect "test" [90m(testing.specificHooks._post)[0m
-for all expect "test"
+> echo for all expect test [90m(testing.specificHooks._post)[0m
+for all expect test

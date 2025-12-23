@@ -24,7 +24,7 @@ echo pre default
 bsm ~.test
 echo pre test
 echo test
-echo for all expect "test"
+echo for all expect test
 echo for test
 bsm ~.test
 echo test
