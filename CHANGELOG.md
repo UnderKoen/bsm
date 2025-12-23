@@ -1,3 +1,10 @@
+# [1.11.0](https://github.com/UnderKoen/bsm/compare/v1.10.2...v1.11.0) (2025-12-23)
+
+
+### Features
+
+* allow for specific hooks ([39edcca](https://github.com/UnderKoen/bsm/commit/39edcca36eb5cdb91af06c9f409780791ee7d4a0))
+
 ## [1.10.2](https://github.com/UnderKoen/bsm/compare/v1.10.1...v1.10.2) (2025-12-15)
 
 
