@@ -1,3 +1,10 @@
+## [1.11.1](https://github.com/UnderKoen/bsm/compare/v1.11.0...v1.11.1) (2026-01-06)
+
+
+### Bug Fixes
+
+* allow multiple object within idempotency ([5ee534f](https://github.com/UnderKoen/bsm/commit/5ee534f3044f5a962e2644b6b7e8724242c3ba01))
+
 # [1.11.0](https://github.com/UnderKoen/bsm/compare/v1.10.2...v1.11.0) (2025-12-23)
 
 
