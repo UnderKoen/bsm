@@ -10,7 +10,7 @@ import { Logger } from "../src/Logger.js";
 sinon.restore();
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let consoleLog = sinon.stub(Logger, "log");
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 let consoleError = sinon.stub(Logger, "error");
 
 function suite(name: string): ReturnType<typeof _suite> {
@@ -37,6 +37,56 @@ function suite(name: string): ReturnType<typeof _suite> {
   });
   return test;
 }
+
+//region getIdempotencyKeys()
+const getIdempotencyKeysSuite = suite("getIdempotencyKeys()");
+
+getIdempotencyKeysSuite("should return array for single key", () => {
+  // Arrange
+
+  // Act
+  const result = Idempotency.getIdempotencyKeys("static:123");
+
+  // Assert
+  assert.equal(result, ["static:123"]);
+});
+
+getIdempotencyKeysSuite("should return array for array of keys", () => {
+  // Arrange
+
+  // Act
+  const result = Idempotency.getIdempotencyKeys(["static:123", "env:TEST"]);
+
+  // Assert
+  assert.equal(result, ["static:123", "env:TEST"]);
+});
+
+getIdempotencyKeysSuite("should return array for object of keys", () => {
+  // Arrange
+
+  // Act
+  const result = Idempotency.getIdempotencyKeys({
+    a: "static:123",
+    b: ["env:TEST"],
+  });
+
+  // Assert
+  assert.equal(result, ["static:123", "env:TEST"]);
+});
+
+getIdempotencyKeysSuite("should log error for invalid type", () => {
+  // Arrange
+
+  // Act
+  const result = Idempotency.getIdempotencyKeys(123 as never);
+
+  // Assert
+  assert.equal(result, []);
+  assert.equal(consoleError.callCount, 1);
+});
+
+getIdempotencyKeysSuite.run();
+//endregion
 
 //region calculateIdempotencyHash()
 const calculateIdempotencyHashSuite = suite("calculateIdempotencyHash()");

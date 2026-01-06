@@ -96,7 +96,7 @@ export class Idempotency {
     }
   }
 
-  private static getIdempotencyKeys(
+  public static getIdempotencyKeys(
     this: void,
     config: IdempotencyConfig,
   ): IdempotencyKey[] {
