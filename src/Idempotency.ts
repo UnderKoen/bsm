@@ -10,11 +10,15 @@ import { globSync } from "glob";
 type IdempotencyType = "file" | "dir" | "env" | "static" | "glob";
 type IdempotencyKey = `${IdempotencyType}:${string}`;
 
-export type IdempotencyConfig =
+type IdempotencyKeyMap = {
   // Key is just for labeling purposes
-  | Record<string, IdempotencyKey | IdempotencyKey[]>
+  [label: string]: IdempotencyConfig;
+};
+
+export type IdempotencyConfig =
+  | IdempotencyKey
   | IdempotencyKey[]
-  | IdempotencyKey;
+  | IdempotencyKeyMap;
 
 export class Idempotency {
   public static get useFileContent(): boolean {
@@ -92,26 +96,29 @@ export class Idempotency {
     }
   }
 
+  private static getIdempotencyKeys(
+    this: void,
+    config: IdempotencyConfig,
+  ): IdempotencyKey[] {
+    if (typeof config === "string") {
+      return [config];
+    } else if (typeof config === "object") {
+      return Object.values(config).flatMap(Idempotency.getIdempotencyKeys);
+    }
+
+    Logger.error(
+      // please use (type: ${typeof config} not supported) in message in color
+      `\x1b[31m[Idempotency] Invalid idempotency config (type: \x1B[4m${typeof config}\x1B[0m\x1b[31m not supported)\x1b[0m`,
+    );
+
+    return [];
+  }
+
   public static calculateIdempotencyHash(
     config: IdempotencyConfig,
     options?: Options,
   ): string {
-    const keys: IdempotencyKey[] = [];
-
-    if (Array.isArray(config)) {
-      keys.push(...config);
-    } else if (typeof config === "string") {
-      keys.push(config);
-    } else {
-      for (const key of Object.values(config)) {
-        if (Array.isArray(key)) {
-          keys.push(...key);
-        } else {
-          keys.push(key);
-        }
-      }
-    }
-
+    const keys = Idempotency.getIdempotencyKeys(config);
     const hash = createHash("sha256");
 
     for (const key of keys) {
