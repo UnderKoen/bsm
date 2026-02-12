@@ -1,3 +1,10 @@
+## [1.11.2](https://github.com/UnderKoen/bsm/compare/v1.11.1...v1.11.2) (2026-02-12)
+
+
+### Bug Fixes
+
+* be able to silent missing env file log ([a899c53](https://github.com/UnderKoen/bsm/commit/a899c5349be8b4bf975d8789b16f6c0fcf12c953))
+
 ## [1.11.1](https://github.com/UnderKoen/bsm/compare/v1.11.0...v1.11.1) (2026-01-06)
 
 
