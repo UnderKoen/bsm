@@ -15,6 +15,7 @@ export const DEFAULT_CONFIG: Readonly<TConfig> = Object.freeze({
       location: "./node_modules/.cache/bsm/idempotency",
       useFileContent: false,
     },
+    silentMissingEnvFiles: false,
   },
 } as TConfig);
 

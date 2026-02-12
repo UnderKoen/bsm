@@ -434,10 +434,11 @@ class Executor {
         const file = path.join(process.cwd(), context.slice(5));
 
         if (!fs.existsSync(file)) {
-          Logger.error(
-            `\x1b[31mFile '${file}' does not exist\x1b[0m\n` +
-              "\x1b[1mRunning script without these environment variables\x1b[0m\n",
-          );
+          if (!ConfigLoader.config.config?.silentMissingEnvFiles)
+            Logger.error(
+              `\x1b[31mFile '${file}' does not exist\x1b[0m\n` +
+                "\x1b[1mRunning script without these environment variables\x1b[0m\n",
+            );
           return {};
         }
         const content = fs.readFileSync(file, "utf-8").replaceAll("\r", "");

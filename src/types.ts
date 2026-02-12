@@ -11,6 +11,7 @@ export interface TConfig {
       location?: string;
       useFileContent?: boolean;
     };
+    silentMissingEnvFiles: boolean;
   };
 }
 
