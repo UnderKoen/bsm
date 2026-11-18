@@ -5,6 +5,7 @@ import child_process from "node:child_process";
 import fs from "fs";
 import os from "os";
 import path from "path";
+import { EventEmitter } from "events";
 import { Executor } from "../src/Executor.js";
 import { Events } from "../src/Events.js";
 import { Idempotency } from "../src/Idempotency.js";
@@ -15,15 +16,30 @@ import { TScript } from "../src/types.js";
 
 type Event = Record<string, unknown> & { type: string; id?: string };
 
-const spawnMock = (code: number | null, signal?: NodeJS.Signals) =>
-  ({
-    on: (
-      _name: string,
-      cb: (code: number | null, signal?: NodeJS.Signals) => void,
-    ) => {
-      cb(code, signal);
-    },
-  }) as unknown as child_process.ChildProcessWithoutNullStreams;
+/**
+ * A child process that prints `output`, then closes with `code`/`signal`,
+ * once everyone had the chance to listen.
+ */
+const spawnMock = (
+  code: number | null,
+  signal?: NodeJS.Signals,
+  output: ["stdout" | "stderr", string | Buffer][] = [],
+) => {
+  const child = Object.assign(new EventEmitter(), {
+    stdout: new EventEmitter(),
+    stderr: new EventEmitter(),
+  });
+  setImmediate(() => {
+    for (const [stream, text] of output) {
+      child[stream].emit(
+        "data",
+        Buffer.isBuffer(text) ? text : Buffer.from(text),
+      );
+    }
+    child.emit("close", code, signal);
+  });
+  return child as unknown as child_process.ChildProcessWithoutNullStreams;
+};
 
 let dir: string;
 
@@ -57,6 +73,8 @@ test.before.each(() => {
   sinon.restore();
   sinon.stub(Logger, "log");
   sinon.stub(Logger, "error");
+  // Piped unless a test says otherwise, also when the tests run in a terminal
+  sinon.stub(Events, "isTerminal").returns(false);
   process.argv = [];
   // @ts-expect-error config is private
   ConfigLoader._config = { scripts: {} };
@@ -80,7 +98,9 @@ test("writes nothing without BSM_EVENTS", async () => {
   delete process.env.BSM_EVENTS;
   Events._reset();
   fs.rmSync(dir, { recursive: true, force: true });
-  const spawn = sinon.stub(child_process, "spawn").returns(spawnMock(0));
+  const spawn = sinon
+    .stub(child_process, "spawn")
+    .callsFake(() => spawnMock(0));
 
   await run("echo a", []);
 
@@ -89,7 +109,9 @@ test("writes nothing without BSM_EVENTS", async () => {
 });
 
 test("builds a tree with hooks and spawned commands", async () => {
-  const spawn = sinon.stub(child_process, "spawn").returns(spawnMock(0));
+  const spawn = sinon
+    .stub(child_process, "spawn")
+    .callsFake(() => spawnMock(0));
 
   await run({ _pre: "echo pre", _default: ["echo 1"] }, []);
 
@@ -134,7 +156,7 @@ test("builds a tree with hooks and spawned commands", async () => {
 
 test("uses BSM_PARENT_ID as parent of the first script", async () => {
   process.env.BSM_PARENT_ID = "100-7";
-  sinon.stub(child_process, "spawn").returns(spawnMock(0));
+  sinon.stub(child_process, "spawn").callsFake(() => spawnMock(0));
 
   await run("echo a", []);
 
@@ -142,7 +164,7 @@ test("uses BSM_PARENT_ID as parent of the first script", async () => {
 });
 
 test("ends failed scripts with their exit code", async () => {
-  sinon.stub(child_process, "spawn").returns(spawnMock(4));
+  sinon.stub(child_process, "spawn").callsFake(() => spawnMock(4));
 
   try {
     await run({ _default: "exit 4" }, []);
@@ -161,8 +183,8 @@ test("ends failed scripts with their exit code", async () => {
 
 test("a caught error ends the object successfully", async () => {
   const spawn = sinon.stub(child_process, "spawn");
-  spawn.onFirstCall().returns(spawnMock(4));
-  spawn.onSecondCall().returns(spawnMock(0));
+  spawn.onFirstCall().callsFake(() => spawnMock(4));
+  spawn.onSecondCall().callsFake(() => spawnMock(0));
 
   await run({ _default: "exit 4", _catch: "echo catch" }, []);
 
@@ -217,7 +239,7 @@ test("function errors are reported on the function", async () => {
 });
 
 test("scripts returned by a function are marked as returned", async () => {
-  sinon.stub(child_process, "spawn").returns(spawnMock(0));
+  sinon.stub(child_process, "spawn").callsFake(() => spawnMock(0));
 
   await run(() => ({ _default: "echo a" }), []);
 
@@ -246,7 +268,7 @@ test("functions see BSM_PARENT_ID while they run", async () => {
 });
 
 test("does not leave event state on shared options", async () => {
-  sinon.stub(child_process, "spawn").returns(spawnMock(0));
+  sinon.stub(child_process, "spawn").callsFake(() => spawnMock(0));
   const options = {};
 
   await Executor.runScript({ a: "echo a" }, ["a"], ["s"], options);
@@ -339,7 +361,7 @@ function nextProcess() {
 }
 
 test("ids are short hashes and the same in every run", async () => {
-  sinon.stub(child_process, "spawn").returns(spawnMock(0));
+  sinon.stub(child_process, "spawn").callsFake(() => spawnMock(0));
   await run({ _pre: "echo pre", _default: ["echo 1"] }, []);
   const first = readEvents()
     .filter((e) => e.type === "start")
@@ -373,14 +395,38 @@ test("processes started from the same node get different ids", () => {
   assert.ok(first);
   assert.ok(second);
   assert.not.equal(first, second);
-  assert.equal(
-    fs
-      .readdirSync(dir)
-      .filter((f) => f.endsWith(".jsonl"))
-      .sort(),
-    // Named after the node that started them, numbered in start order
-    ["abcdef12-2.jsonl", "abcdef12.jsonl"],
-  );
+  // Named after the node that started them and their folder; the same
+  // folder twice is numbered in start order
+  const names = fs
+    .readdirSync(dir)
+    .filter((f) => f.endsWith(".jsonl"))
+    .sort();
+  assert.is(names.length, 2);
+  assert.match(names[0], /^abcdef12-[0-9a-f]{8}-2\.jsonl$/);
+  assert.is(names[0].replace("-2.jsonl", ".jsonl"), names[1]);
+});
+
+test("nested processes in different folders get their own, stable file names", () => {
+  process.env.BSM_PARENT_ID = "abcdef12";
+  process.env.BSM_ROOT_CWD = process.cwd();
+  const cwd = sinon.stub(process, "cwd");
+  const names = (folders: string[]) => {
+    fs.rmSync(dir, { recursive: true, force: true });
+    for (const folder of folders) {
+      cwd.returns(path.join(process.env.BSM_ROOT_CWD ?? "", folder));
+      nextProcess();
+      Events.start(undefined, "build", "string");
+    }
+    return fs.readdirSync(dir).filter((f) => f.endsWith(".jsonl"));
+  };
+
+  const first = names(["packages/a", "packages/b"]);
+  // Another run, started the other way around (like lerna --parallel)
+  const second = names(["packages/b", "packages/a"]);
+
+  assert.is(first.length, 2);
+  for (const name of first) assert.match(name, /^abcdef12-[0-9a-f]{8}\.jsonl$/);
+  assert.equal([...second].sort(), [...first].sort());
 });
 
 test("the top process writes root.jsonl", () => {
@@ -401,10 +447,8 @@ test("parent ids from the environment are safe as file names", () => {
   process.env.BSM_PARENT_ID = "../a b";
   Events.start(undefined, "s", "string");
 
-  assert.equal(
-    fs.readdirSync(dir).filter((f) => f.endsWith(".jsonl")),
-    ["___a_b.jsonl"],
-  );
+  const [name] = fs.readdirSync(dir).filter((f) => f.endsWith(".jsonl"));
+  assert.match(name, /^___a_b-[0-9a-f]{8}\.jsonl$/);
 });
 
 test("a relative BSM_EVENTS is passed on as an absolute path", () => {
@@ -458,7 +502,9 @@ test("disables itself when an id cannot be claimed", () => {
 });
 
 test("commands killed by a signal end with the signal", async () => {
-  sinon.stub(child_process, "spawn").returns(spawnMock(null, "SIGTERM"));
+  sinon
+    .stub(child_process, "spawn")
+    .callsFake(() => spawnMock(null, "SIGTERM"));
 
   try {
     await run({ _default: "sleep 100" }, []);
@@ -550,7 +596,7 @@ test("notRun nodes are skipped right away with the reason", () => {
 });
 
 test("array items after a failing one are recorded as not run", async () => {
-  sinon.stub(child_process, "spawn").returns(spawnMock(3));
+  sinon.stub(child_process, "spawn").callsFake(() => spawnMock(3));
 
   try {
     await run(["exit 3", "echo b"], []);
@@ -569,6 +615,261 @@ test("array items after a failing one are recorded as not run", async () => {
       ["skip", "not run: s.0 failed"],
     ],
   );
+});
+
+type LogRecord = {
+  time: string;
+  stream: string;
+  log: string;
+  bsm?: boolean;
+};
+
+function readLog(file: string): LogRecord[] {
+  const full = path.join(dir, "logs", file);
+  if (!fs.existsSync(full)) return [];
+  return fs
+    .readFileSync(full, "utf8")
+    .split("\n")
+    .filter(Boolean)
+    .map((l) => JSON.parse(l) as LogRecord);
+}
+
+/** What went to the real terminal (past the capture of bsm's own output) */
+function captureTerminal() {
+  return sinon.stub(Events, "terminalWrite");
+}
+
+const startOf = (script: string) =>
+  readEvents().find((e) => e.type === "start" && e.script === script);
+
+test("piped command output goes to the terminal and, per line, to the node's log", async () => {
+  const spawn = sinon.stub(child_process, "spawn").callsFake(() =>
+    spawnMock(0, undefined, [
+      ["stdout", "a\nb"],
+      ["stderr", "err\n"],
+      ["stdout", "c\n"],
+    ]),
+  );
+  const terminal = captureTerminal();
+
+  await run("echo a", []);
+
+  assert.equal(spawn.args[0][2].stdio, ["inherit", "pipe", "pipe"]);
+  assert.equal(
+    terminal.args.map(([stream, chunk]) => [stream, String(chunk)]),
+    [
+      ["stdout", "a\nb"],
+      ["stderr", "err\n"],
+      ["stdout", "c\n"],
+    ],
+  );
+  const log = readLog(`${String(startOf("s")?.id)}.jsonl`);
+  assert.equal(
+    log.map((r) => [r.stream, r.log, r.bsm]),
+    [
+      ["stdout", "a\n", undefined],
+      ["stderr", "err\n", undefined],
+      ["stdout", "bc\n", undefined],
+    ],
+  );
+  assert.ok(!Number.isNaN(Date.parse(log[0].time)));
+});
+
+test("a line without newline is written when the node ends", async () => {
+  sinon
+    .stub(child_process, "spawn")
+    .callsFake(() => spawnMock(0, undefined, [["stdout", "no newline"]]));
+  captureTerminal();
+
+  await run("echo a", []);
+
+  assert.equal(
+    readLog(`${String(startOf("s")?.id)}.jsonl`).map((r) => r.log),
+    ["no newline"],
+  );
+});
+
+test("characters split across chunks stay intact", async () => {
+  const bytes = Buffer.from("é\n");
+  sinon.stub(child_process, "spawn").callsFake(() =>
+    spawnMock(0, undefined, [
+      ["stdout", bytes.subarray(0, 1)],
+      ["stdout", bytes.subarray(1)],
+    ]),
+  );
+  captureTerminal();
+
+  await run("echo a", []);
+
+  assert.equal(
+    readLog(`${String(startOf("s")?.id)}.jsonl`).map((r) => r.log),
+    ["é\n"],
+  );
+});
+
+test("an unfinished character is written when the node ends", async () => {
+  sinon
+    .stub(child_process, "spawn")
+    .callsFake(() =>
+      spawnMock(0, undefined, [["stdout", Buffer.from([0x61, 0xc3])]]),
+    );
+  captureTerminal();
+
+  await run("echo a", []);
+
+  assert.equal(
+    readLog(`${String(startOf("s")?.id)}.jsonl`).map((r) => r.log),
+    ["a�"],
+  );
+});
+
+test("bsm's own output goes to the log of the running node, the rest to the process log", async () => {
+  // Before events start, so the capture keeps this as the real write
+  const stdout = sinon.stub(process.stdout, "write").returns(true);
+
+  await run(() => {
+    console.log("from a function");
+  }, []);
+  process.stdout.write("outside any node\n");
+
+  assert.equal(
+    readLog(`${String(startOf("s")?.id)}.jsonl`).map((r) => [r.log, r.bsm]),
+    [["from a function\n", true]],
+  );
+  assert.equal(
+    readLog("process/root.jsonl").map((r) => [r.log, r.bsm]),
+    [["outside any node\n", true]],
+  );
+  // Still printed
+  assert.ok(stdout.args.some(([chunk]) => chunk === "outside any node\n"));
+});
+
+test("command output is not logged twice through the capture", async () => {
+  sinon
+    .stub(child_process, "spawn")
+    .callsFake(() => spawnMock(0, undefined, [["stdout", "once\n"]]));
+  sinon.stub(process.stdout, "write").returns(true);
+
+  await run("echo a", []);
+
+  assert.equal(
+    readLog(`${String(startOf("s")?.id)}.jsonl`).map((r) => [r.log, r.bsm]),
+    [["once\n", undefined]],
+  );
+});
+
+test("nested bsm calls keep bsm's stdio", async () => {
+  const spawn = sinon
+    .stub(child_process, "spawn")
+    .callsFake(() => spawnMock(0));
+
+  await run("bsm build", []);
+
+  assert.is(spawn.args[0][2].stdio, "inherit");
+});
+
+test("in a terminal commands keep it and nodes are marked", async () => {
+  (Events.isTerminal as sinon.SinonStub).returns(true);
+  const spawn = sinon
+    .stub(child_process, "spawn")
+    .callsFake(() => spawnMock(0, undefined, [["stdout", "x\n"]]));
+  // eslint-disable-next-line @typescript-eslint/unbound-method
+  const write = process.stdout.write;
+  const terminal = captureTerminal();
+
+  await run({ a: "echo a" }, ["a"]);
+
+  assert.is(spawn.args[0][2].stdio, "inherit");
+  // eslint-disable-next-line @typescript-eslint/unbound-method
+  assert.is(process.stdout.write, write, "own output is not captured");
+  assert.not.ok(fs.existsSync(path.join(dir, "logs")));
+
+  const s = String(startOf("s")?.id);
+  const a = String(startOf("s.a")?.id);
+  assert.equal(
+    terminal.args.map(([stream, chunk]) => [stream, String(chunk)]),
+    [
+      ["stdout", `\x1b]7777;bsm;start;${s}\x07`],
+      ["stdout", `\x1b]7777;bsm;start;${a}\x07`],
+      ["stdout", `\x1b]7777;bsm;end;${a}\x07`],
+      ["stdout", `\x1b]7777;bsm;end;${s}\x07`],
+    ],
+  );
+});
+
+test("commands keep bsm's stdio when events are off", () => {
+  delete process.env.BSM_EVENTS;
+  Events._reset();
+
+  assert.is(Events.spawn(undefined, "echo a").stdio, "inherit");
+});
+
+test("the first nodes of a process name their package", () => {
+  const root = Events.start(undefined, "s", "object");
+  Events.start(root, "s.a", "string");
+
+  const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8")) as {
+    name: string;
+  };
+  assert.equal(
+    readEvents().map((e) => [e.script, e.package]),
+    [
+      ["s", packageJson.name],
+      ["s.a", undefined],
+    ],
+  );
+});
+
+test("no package without a package.json or a name in it", () => {
+  const exists = sinon.stub(fs, "existsSync").returns(false);
+  Events.start(undefined, "a", "string");
+  exists.restore();
+
+  const pkg = path.join(dir, "pkg");
+  fs.mkdirSync(pkg);
+  fs.writeFileSync(path.join(pkg, "package.json"), "{ not json");
+  sinon.stub(process, "cwd").returns(pkg);
+  Events.start(undefined, "b", "string");
+  // Cached per folder
+  Events.start(undefined, "c", "string");
+
+  assert.equal(
+    readEvents().map((e) => [e.script, e.package]),
+    [
+      ["a", undefined],
+      ["b", undefined],
+      ["c", undefined],
+    ],
+  );
+});
+
+test("the log stops, the command doesn't, when writing fails", async () => {
+  sinon.stub(child_process, "spawn").callsFake(() =>
+    spawnMock(0, undefined, [
+      ["stdout", "one\n"],
+      ["stdout", "two\n"],
+    ]),
+  );
+  // Only the log: the event file is appended through openSync too
+  const openSync = fs.openSync.bind(fs);
+  sinon
+    .stub(fs, "openSync")
+    .callsFake((file: fs.PathLike, flags: fs.OpenMode) => {
+      if (String(file).includes(`${path.sep}logs${path.sep}`)) {
+        throw new Error("disk full");
+      }
+      return openSync(file, flags);
+    });
+  const terminal = captureTerminal();
+
+  await run("echo a", []);
+
+  // Both chunks still reach the terminal, the warning comes once
+  const out = terminal.args.filter(([stream]) => stream === "stdout");
+  const err = terminal.args.filter(([stream]) => stream === "stderr");
+  assert.is(out.length, 2);
+  assert.is(err.length, 1);
+  assert.match(String(err[0][1]), "disk full");
 });
 
 test.run();

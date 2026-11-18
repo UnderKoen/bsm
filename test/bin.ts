@@ -84,6 +84,7 @@ function localBsmEnv(extra: Record<string, string>): NodeJS.ProcessEnv {
 }
 
 type RunEvent = Record<string, unknown>;
+type LogRecord = { time: string; stream: string; log: string; bsm?: true };
 
 async function runWithEvents(
   command: string,
@@ -96,6 +97,8 @@ async function runWithEvents(
   text: string;
   files: RunEvent[][];
   names: string[];
+  /** Log records by file, relative to `logs/` (`<id>.jsonl`, `process/root.jsonl`) */
+  logs: Record<string, LogRecord[]>;
 }> {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "bsm-events-"));
 
@@ -118,9 +121,10 @@ async function runWithEvents(
       s.on("close", resolve);
     });
 
-    // In start order: `<id>.jsonl` before `<id>-2.jsonl`
+    // In start order: `<id>-<folder>.jsonl` before `<id>-<folder>-2.jsonl`
+    // (the counter is short, the folder hash always 8 characters)
     const order = (name: string) => {
-      const match = /^(.*?)(?:-(\d+))?\.jsonl$/.exec(name);
+      const match = /^(.*?)(?:-(\d{1,4}))?\.jsonl$/.exec(name);
       const n = match?.[2];
       return [match?.[1] ?? name, n === undefined ? 1 : Number(n)] as const;
     };
@@ -139,7 +143,23 @@ async function runWithEvents(
         .filter(Boolean)
         .map((l) => JSON.parse(l) as RunEvent),
     );
-    return { code, text, files, names };
+    const logDir = path.join(dir, "logs");
+    const logs = Object.fromEntries(
+      (fs.existsSync(logDir)
+        ? fs.readdirSync(logDir, { recursive: true, encoding: "utf8" })
+        : []
+      )
+        .filter((f) => f.endsWith(".jsonl"))
+        .map((f) => [
+          f.replaceAll("\\", "/"),
+          fs
+            .readFileSync(path.join(logDir, f), "utf8")
+            .split("\n")
+            .filter(Boolean)
+            .map((l) => JSON.parse(l) as LogRecord),
+        ]),
+    );
+    return { code, text, files, names, logs };
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
@@ -194,6 +214,50 @@ function matchEventsSnapshot(name: string, files: RunEvent[][]): void {
   assert.snapshot(snapshot, fs.readFileSync(file, "utf8"));
 }
 
+/** `echo` on Windows writes CRLF */
+function lf(text: string): string {
+  return text.replaceAll("\r\n", "\n");
+}
+
+/**
+ * Together the logs hold exactly what the terminal showed: every line once,
+ * nothing extra. Every log belongs to a node of the run (or is a process log),
+ * and nested `bsm` calls have no command output of their own.
+ */
+function checkLogs(
+  files: RunEvent[][],
+  logs: Record<string, LogRecord[]>,
+  text: string,
+): void {
+  const lines = (s: string) =>
+    lf(s)
+      .split(/(?<=\n)/)
+      .filter(Boolean)
+      .sort();
+  const logged = Object.values(logs)
+    .flat()
+    .map((r) => r.log);
+  assert.equal(lines(logged.join("")), lines(text), "logs = terminal output");
+
+  const events = files.flat();
+  const ids = new Set(
+    events.filter((e) => e.type === "start").map((e) => e.id),
+  );
+  for (const [file, records] of Object.entries(logs)) {
+    if (file.startsWith("process/")) continue;
+    const id = file.replace(/\.jsonl$/, "");
+    assert.ok(ids.has(id), `${file} belongs to a node`);
+
+    const spawn = events.find((e) => e.type === "spawn" && e.id === id);
+    if (spawn && /^bsm(\s|$)/.test(spawn.cmd as string)) {
+      assert.ok(
+        records.every((r) => r.bsm === true),
+        `${spawn.cmd as string} is nested: only bsm's own lines`,
+      );
+    }
+  }
+}
+
 const eventCommands = [
   ...commands,
   // A function that throws (no output snapshot: it prints a stack trace with paths)
@@ -202,7 +266,8 @@ const eventCommands = [
 
 for (const command of eventCommands) {
   test(`bsm ${command} with BSM_EVENTS`, async () => {
-    const { code, text, files } = await runWithEvents(command);
+    const { code, text, files, logs } = await runWithEvents(command);
+    checkLogs(files, logs, text);
 
     // Output is unchanged by events
     const output = `./test/snapshots/${command}.snapshot`;
@@ -302,16 +367,19 @@ test("BSM_EVENTS names files after the node that started the process", async () 
     .flat()
     .find((e) => e.type === "spawn" && e.cmd === "bsm ~.* && bsm ~.*");
   assert.ok(spawn);
-  assert.equal([...names].sort(), [
-    `${String(spawn.id)}-2.jsonl`,
-    `${String(spawn.id)}.jsonl`,
-    "root.jsonl",
-  ]);
+  // Same node, same folder: numbered in start order
+  const nested = names.filter((n) => n !== "root.jsonl").sort();
+  assert.is(names.length, 3);
+  assert.match(
+    nested[0],
+    new RegExp(`^${String(spawn.id)}-[0-9a-f]{8}-2\\.jsonl$`),
+  );
+  assert.is(nested[0].replace("-2.jsonl", ".jsonl"), nested[1]);
   // And each file's first node points at the node it's named after
   for (const [i, name] of names.entries()) {
     const parent = files[i].find((e) => e.type === "start")?.parent;
     assert.is(
-      name.replace(/(-\d+)?\.jsonl$/, ""),
+      name.replace(/(-[0-9a-f]{8})?(-\d{1,4})?\.jsonl$/, ""),
       parent === undefined ? "root" : parent,
     );
   }
@@ -358,6 +426,86 @@ test("BSM_EVENTS reports an error in a nested bsm once, in that process", async 
   );
   assert.equal(endOf(files.flat(), "nestedError._default"), [1, undefined]);
   matchEventsSnapshot("fixture.nestedError", files);
+});
+
+test("BSM_EVENTS logs a command's stdout and stderr, and bsm's own line, per line", async () => {
+  const { code, text, files, logs } = await runWithEvents("output", {
+    config: eventsFixture,
+  });
+
+  assert.is(code, 0);
+  checkLogs(files, logs, text);
+  const spawn = files.flat().find((e) => e.type === "spawn");
+  assert.equal(
+    logs[`${String(spawn?.id)}.jsonl`].map((r) => [r.stream, lf(r.log), r.bsm]),
+    [
+      ["stdout", `> ${String(spawn?.cmd)} \x1b[90m(output)\x1b[0m\n`, true],
+      ["stdout", "out\n", undefined],
+      ["stderr", "err\n", undefined],
+    ],
+  );
+});
+
+test("BSM_EVENTS shows which package failed under a lerna-like parallel run, with its log", async () => {
+  const { code, text, files, logs } = await runWithEvents("parallel", {
+    config: eventsFixture,
+  });
+
+  assert.is(code, 1);
+  const events = files.flat();
+  const launcher = events.find(
+    (e) => e.type === "spawn" && e.cmd === "node ./test/fixtures/parallel.mjs",
+  );
+  assert.ok(launcher);
+
+  // One bsm process per package, both under the launcher, named by package
+  const packages = events.filter(
+    (e) =>
+      e.type === "start" && e.package !== undefined && e.parent === launcher.id,
+  );
+  assert.equal(packages.map((e) => e.package).sort(), [
+    "@fixture/fail",
+    "@fixture/ok",
+  ]);
+  const byPackage = (name: string) => {
+    const root = packages.find((e) => e.package === name);
+    assert.ok(root);
+    return root;
+  };
+  const failed = byPackage("@fixture/fail");
+  const ok = byPackage("@fixture/ok");
+  const endCode = (id: unknown) =>
+    events.find((e) => e.type === "end" && e.id === id)?.code;
+  assert.is(endCode(failed.id), 2);
+  assert.is(endCode(ok.id), 0);
+
+  // The failing package's output is in its own logs, without rerunning
+  const below = (id: unknown): unknown[] => {
+    const children = events
+      .filter((e) => e.type === "start" && e.parent === id)
+      .map((e) => e.id);
+    return [id, ...children.flatMap(below)];
+  };
+  const output = (id: unknown) =>
+    below(id)
+      .flatMap((n) => logs[`${String(n)}.jsonl`] ?? [])
+      .filter((r) => r.bsm === undefined)
+      .map((r) => [r.stream, lf(r.log)]);
+  assert.equal(output(failed.id), [
+    ["stdout", "fail building\n"],
+    ["stderr", "broken: something went wrong\n"],
+  ]);
+  assert.equal(output(ok.id), [
+    ["stdout", "ok building\n"],
+    ["stdout", "ok done\n"],
+  ]);
+
+  // The launcher's own log is what it printed: everything, prefixed
+  const raw = (logs[`${String(launcher.id)}.jsonl`] ?? []).map((r) =>
+    lf(r.log),
+  );
+  assert.ok(raw.includes("fail: broken: something went wrong\n"));
+  assert.ok(lf(text).includes("fail: broken: something went wrong\n"));
 });
 
 const notRun = (events: RunEvent[]) =>

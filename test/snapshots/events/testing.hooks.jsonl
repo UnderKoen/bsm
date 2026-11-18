@@ -1,4 +1,4 @@
-{"v":1,"t":0,"type":"start","id":"acb7d72c","script":"testing","kind":"object","cwd":"."}
+{"v":1,"t":0,"type":"start","id":"acb7d72c","script":"testing","kind":"object","cwd":".","package":"@under_koen/bsm"}
 {"v":1,"t":0,"type":"start","id":"7f47b47f","parent":"acb7d72c","script":"testing.hooks","kind":"object","cwd":"."}
 {"v":1,"t":0,"type":"start","id":"68a31b97","parent":"7f47b47f","script":"testing.hooks._pre","kind":"string","hook":"_pre","cwd":"."}
 {"v":1,"t":0,"type":"spawn","id":"68a31b97","cmd":"echo pre hooks"}

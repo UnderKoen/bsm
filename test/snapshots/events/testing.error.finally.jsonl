@@ -1,4 +1,4 @@
-{"v":1,"t":0,"type":"start","id":"acb7d72c","script":"testing","kind":"object","cwd":"."}
+{"v":1,"t":0,"type":"start","id":"acb7d72c","script":"testing","kind":"object","cwd":".","package":"@under_koen/bsm"}
 {"v":1,"t":0,"type":"start","id":"b74394ba","parent":"acb7d72c","script":"testing.error","kind":"object","cwd":"."}
 {"v":1,"t":0,"type":"start","id":"6328ec59","parent":"b74394ba","script":"testing.error.finally","kind":"object","cwd":"."}
 {"v":1,"t":0,"type":"start","id":"ac1739fc","parent":"6328ec59","script":"testing.error.finally._default","kind":"string","cwd":"."}

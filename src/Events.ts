@@ -1,9 +1,36 @@
 import fs from "fs";
 import path from "path";
 import { createHash } from "crypto";
+import { AsyncLocalStorage } from "async_hooks";
+import { StringDecoder } from "string_decoder";
 import { BsmError, BsmFunctionError } from "./BsmError.js";
+import type { ChildProcess, StdioOptions } from "child_process";
 
 export const EVENTS_VERSION = 1;
+
+type Stream = "stdout" | "stderr";
+
+/** How to run a command so its output ends up where events want it */
+export type CommandOutput = {
+  stdio: StdioOptions;
+  /** Call right after spawning */
+  attach(child: ChildProcess): void;
+};
+
+const PASSTHROUGH: CommandOutput = {
+  stdio: "inherit",
+  attach() {
+    // Output goes straight to the terminal or pipe bsm writes to
+  },
+};
+
+/**
+ * Invisible markers around every node when bsm writes to a terminal. A
+ * terminal ignores unknown OSC sequences; the IntelliJ plugin splits its
+ * console on them to get the output per node.
+ */
+const marker = (kind: "start" | "end", id: string) =>
+  `\x1b]7777;bsm;${kind};${id}\x07`;
 
 export type ScriptKind = "string" | "function" | "array" | "object";
 
@@ -24,6 +51,8 @@ export type RunEvent =
       /** Absent for a script that never ran and was never resolved (a CLI argument) */
       kind?: ScriptKind;
       cwd: string;
+      /** Name from the nearest package.json, on the first nodes of a process */
+      package?: string;
     } & StartMarks)
   | { type: "spawn"; id: string; cmd: string }
   | {
@@ -38,6 +67,102 @@ export type RunEvent =
   | { type: "error"; id?: string; message: string };
 
 /**
+ * One node's output as JSONL, one record per line, in Docker's json-file
+ * shape: `{"time","stream","log"}` plus `"bsm": true` for bsm's own output.
+ * Opened on the first line, so nodes that print nothing have no file.
+ */
+class LogFile {
+  private fd: number | undefined;
+  private failed = false;
+  /** Text after the last newline, per source, and when it started */
+  private readonly partial = new Map<string, { text: string; time: number }>();
+  private readonly decoders = new Map<string, StringDecoder>();
+
+  constructor(private readonly file: string) {}
+
+  write(stream: Stream, chunk: string | Uint8Array, bsm: boolean): void {
+    const key = `${stream}:${String(bsm)}`;
+    const text =
+      typeof chunk === "string" ? chunk : this.decoder(key).write(chunk);
+
+    const now = Date.now();
+    let pending = this.partial.get(key) ?? { text: "", time: now };
+    pending.text += text;
+
+    let newline: number;
+    while ((newline = pending.text.indexOf("\n")) !== -1) {
+      this.record(
+        stream,
+        pending.text.slice(0, newline + 1),
+        pending.time,
+        bsm,
+      );
+      pending = { text: pending.text.slice(newline + 1), time: now };
+    }
+
+    if (pending.text === "") this.partial.delete(key);
+    else this.partial.set(key, pending);
+  }
+
+  /** Writes what's left without a newline and closes the file */
+  close(): void {
+    for (const [key, decoder] of this.decoders) {
+      const rest = decoder.end();
+      if (rest) {
+        const [stream, bsm] = key.split(":") as [Stream, string];
+        this.write(stream, rest, bsm === "true");
+      }
+    }
+    for (const [key, { text, time }] of this.partial) {
+      const [stream, bsm] = key.split(":") as [Stream, string];
+      this.record(stream, text, time, bsm === "true");
+    }
+    this.partial.clear();
+    this.decoders.clear();
+
+    if (this.fd !== undefined) {
+      try {
+        fs.closeSync(this.fd);
+      } catch {
+        // Already closed or gone, nothing left to do
+      }
+      this.fd = undefined;
+    }
+  }
+
+  private decoder(key: string): StringDecoder {
+    let decoder = this.decoders.get(key);
+    if (!decoder) {
+      // Keeps multi-byte characters split across chunks intact
+      decoder = new StringDecoder("utf8");
+      this.decoders.set(key, decoder);
+    }
+    return decoder;
+  }
+
+  private record(stream: Stream, log: string, time: number, bsm: boolean) {
+    if (this.failed) return;
+    try {
+      if (this.fd === undefined) {
+        fs.mkdirSync(path.dirname(this.file), { recursive: true });
+        this.fd = fs.openSync(this.file, "a");
+      }
+      const record = {
+        time: new Date(time).toISOString(),
+        stream,
+        log,
+        ...(bsm && { bsm }),
+      };
+      fs.writeSync(this.fd, JSON.stringify(record) + "\n");
+    } catch (e) {
+      // Keep running; only this log stops
+      this.failed = true;
+      Events.warn(`Could not write log ${this.file}`, e);
+    }
+  }
+}
+
+/**
  * Writes run events as JSONL when `BSM_EVENTS` is set, one file per process:
  * `root.jsonl` for the top process, `<parent node id>.jsonl` for nested ones.
  * See plans/run-events.md for the format.
@@ -45,6 +170,12 @@ export type RunEvent =
  * Node ids are short hashes of the path to the node (parent id, script, how
  * often that script already ran under that parent), so the same script gets
  * the same id in every run, also when processes run in parallel.
+ *
+ * Output per node depends on where bsm writes to:
+ * - a terminal: commands keep it (interactive as always) and bsm writes
+ *   invisible markers around each node, for the plugin to split on;
+ * - anything else (a pipe under lerna or lage, CI, a file): commands are
+ *   piped, and their output plus bsm's own goes to `logs/<id>.jsonl`.
  */
 export class Events {
   private static dir: string | null | undefined = undefined;
@@ -52,14 +183,42 @@ export class Events {
   private static rootParent: string | undefined = undefined;
   private static rootCwd = "";
   private static claims = "";
+  private static terminal = false;
   private static readonly open = new Map<string, number>();
   private static reported = new WeakSet();
   private static lastPrimitive: unknown[] = [];
   private static readonly occurrences = new Map<string, number>();
   private static exitHookInstalled = false;
+  private static readonly logs = new Map<string, LogFile>();
+  private static processLog: LogFile | undefined;
+  private static readonly current = new AsyncLocalStorage<string>();
+  private static originalWrites:
+    | {
+        stdout: typeof process.stdout.write;
+        stderr: typeof process.stderr.write;
+      }
+    | undefined;
+  private static readonly packages = new Map<string, string | undefined>();
 
   static get enabled(): boolean {
     return Events.init();
+  }
+
+  /**
+   * Starts events (when `BSM_EVENTS` is set) right away instead of at the
+   * first script, so output from before that is logged too.
+   */
+  static setup(): void {
+    Events.init();
+  }
+
+  /**
+   * Whether bsm writes to a terminal. Read once per process; a method so
+   * tests can pretend.
+   */
+  static isTerminal(): boolean {
+    // Typed as always true, but undefined (falsy) when stdout is a pipe or file
+    return process.stdout.isTTY;
   }
 
   /**
@@ -99,8 +258,17 @@ export class Events {
       kind,
       ...marks,
       cwd: process.cwd(),
+      package: processRoot ? Events.packageName() : undefined,
     });
+    Events.mark("start", id);
     return id;
+  }
+
+  /**
+   * Runs `fn` as node `id`: bsm's own output while it runs belongs to that node.
+   */
+  static within<T>(id: string, fn: () => T): T {
+    return Events.current.run(id, fn);
   }
 
   /**
@@ -116,9 +284,38 @@ export class Events {
     };
   }
 
-  static spawn(id: string | undefined, cmd: string): void {
-    if (id === undefined) return;
+  /**
+   * Records that node `id` runs `cmd` and decides how to run it. When bsm
+   * doesn't write to a terminal, the command is piped and its output goes to
+   * bsm's own stdout/stderr unchanged and to the node's log. Nested `bsm` calls
+   * always keep bsm's stdio: the inner process handles its own commands.
+   */
+  static spawn(id: string | undefined, cmd: string): CommandOutput {
+    if (id === undefined) return PASSTHROUGH;
     Events.write({ type: "spawn", id, cmd });
+
+    if (Events.terminal || /^\s*bsm(\s|$)/.test(cmd)) return PASSTHROUGH;
+
+    return {
+      stdio: ["inherit", "pipe", "pipe"],
+      attach(child) {
+        const copy = (stream: Stream) => (chunk: Buffer) => {
+          Events.terminalWrite(stream, chunk);
+          Events.logFor(id).write(stream, chunk, false);
+        };
+        child.stdout?.on("data", copy("stdout"));
+        child.stderr?.on("data", copy("stderr"));
+      },
+    };
+  }
+
+  /**
+   * Writes to bsm's real stdout/stderr, past the capture of bsm's own output.
+   */
+  static terminalWrite(stream: Stream, chunk: string | Uint8Array): void {
+    const original = Events.originalWrites?.[stream];
+    if (original) original.call(process[stream], chunk);
+    else process[stream].write(chunk);
   }
 
   /**
@@ -134,6 +331,7 @@ export class Events {
     if (started === undefined) return;
 
     Events.open.delete(id);
+    Events.closeLog(id);
     Events.write({
       type: "end",
       id,
@@ -141,6 +339,7 @@ export class Events {
       signal,
       duration: Date.now() - started,
     });
+    Events.mark("end", id);
   }
 
   /**
@@ -197,7 +396,9 @@ export class Events {
     if (id === undefined || !Events.open.has(id)) return;
 
     Events.open.delete(id);
+    Events.closeLog(id);
     Events.write({ type: "skip", id, reason });
+    Events.mark("end", id);
   }
 
   /**
@@ -225,6 +426,11 @@ export class Events {
     Events.write({ type: "error", id: id ?? Events.rootParent, message });
   }
 
+  static warn(message: string, e: unknown): void {
+    // Never on stdout (tools pipe it), and past the capture so it can't loop
+    Events.terminalWrite("stderr", `\x1b[33m${message}: ${String(e)}\x1b[0m\n`);
+  }
+
   private static init(): boolean {
     if (Events.dir !== undefined) return Events.dir !== null;
 
@@ -235,6 +441,8 @@ export class Events {
     // Absolute, so nested bsm processes in other folders write to the same place
     const dir = path.resolve(process.env.BSM_EVENTS);
     const rootParent = process.env.BSM_PARENT_ID || undefined;
+    // Before claiming the file: its name depends on the folder relative to this
+    Events.rootCwd = process.env.BSM_ROOT_CWD || process.cwd();
 
     try {
       fs.mkdirSync(path.join(dir, ".claims"), { recursive: true });
@@ -247,20 +455,114 @@ export class Events {
     Events.dir = dir;
     Events.claims = path.join(dir, ".claims");
     Events.rootParent = rootParent;
-    Events.rootCwd = process.env.BSM_ROOT_CWD || process.cwd();
+    Events.terminal = Events.isTerminal();
+    // Output outside any node: config errors, the final "Script failed" line
+    Events.processLog = new LogFile(
+      path.join(dir, "logs", "process", path.basename(Events.file)),
+    );
+    if (!Events.terminal) Events.captureOwnOutput();
     Events.installExitHook();
     return true;
   }
 
   /**
-   * The file of a process is named after the node that started it, so tools
-   * find a node's nested process at `<node id>.jsonl`; the top process writes
-   * `root.jsonl`. Several processes started by one node (`bsm a && bsm b`)
+   * bsm's own output (`> cmd` lines, errors, function scripts) goes to the log
+   * of the node that is running, besides the terminal. Command output is
+   * written past this, so it's not logged twice.
+   */
+  private static captureOwnOutput(): void {
+    // Kept unbound on purpose: they are put back as they were in _reset, and
+    // always called with .call(process[stream])
+    const originals = {
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      stdout: process.stdout.write,
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      stderr: process.stderr.write,
+    };
+    Events.originalWrites = originals;
+
+    for (const stream of ["stdout", "stderr"] as const) {
+      const original = originals[stream];
+      process[stream].write = function (
+        this: NodeJS.WriteStream,
+        chunk: string | Uint8Array,
+        ...rest: unknown[]
+      ): boolean {
+        if (Events.dir) {
+          const id = Events.current.getStore();
+          const log = id === undefined ? Events.processLog : Events.logFor(id);
+          log?.write(stream, chunk, true);
+        }
+        return (original as (...args: unknown[]) => boolean).call(
+          this,
+          chunk,
+          ...rest,
+        );
+      } as typeof process.stdout.write;
+    }
+  }
+
+  private static logFor(id: string): LogFile {
+    let log = Events.logs.get(id);
+    if (!log) {
+      log = new LogFile(path.join(Events.dir ?? "", "logs", `${id}.jsonl`));
+      Events.logs.set(id, log);
+    }
+    return log;
+  }
+
+  private static closeLog(id: string): void {
+    Events.logs.get(id)?.close();
+    Events.logs.delete(id);
+  }
+
+  private static mark(kind: "start" | "end", id: string): void {
+    if (Events.terminal) Events.terminalWrite("stdout", marker(kind, id));
+  }
+
+  /**
+   * The `name` of the nearest package.json, so the plugin can say which
+   * package (service) a nested process belongs to.
+   */
+  private static packageName(): string | undefined {
+    const cwd = process.cwd();
+    if (Events.packages.has(cwd)) return Events.packages.get(cwd);
+
+    let name: string | undefined;
+    for (let dir = cwd; ; dir = path.dirname(dir)) {
+      const file = path.join(dir, "package.json");
+      if (fs.existsSync(file)) {
+        try {
+          const json = JSON.parse(fs.readFileSync(file, "utf8")) as {
+            name?: unknown;
+          };
+          if (typeof json.name === "string") name = json.name;
+        } catch {
+          // Not valid JSON: no name
+        }
+        break;
+      }
+      if (path.dirname(dir) === dir) break;
+    }
+
+    Events.packages.set(cwd, name);
+    return name;
+  }
+
+  /**
+   * The top process writes `root.jsonl`. A nested process writes
+   * `<node that started it>-<hash of its folder>.jsonl`: tools find a node's
+   * nested processes by prefix, and every package under one `lerna run` gets
+   * its own name that stays the same between runs, whatever order they start
+   * in. Several processes in the same folder from one node (`bsm a && bsm b`)
    * get `-2`, `-3`, … in start order.
    */
   private static claimFile(dir: string, parent: string | undefined): string {
-    // BSM_PARENT_ID is normally an id, but it comes from the environment
-    const base = parent?.replace(/[^\w-]/g, "_") ?? "root";
+    const base =
+      parent === undefined
+        ? "root"
+        : // BSM_PARENT_ID is normally an id, but it comes from the environment
+          `${parent.replace(/[^\w-]/g, "_")}-${Events.hash(Events.relativeCwd())}`;
     for (let n = 1; ; n++) {
       const file = path.join(dir, `${base}${n === 1 ? "" : `-${n}`}.jsonl`);
       if (Events.createExclusive(file)) return file;
@@ -322,10 +624,7 @@ export class Events {
   private static disable(e: unknown): void {
     Events.dir = null;
     Events.file = undefined;
-    // Never write to stdout, tools pipe it
-    process.stderr.write(
-      `\x1b[33mCould not write BSM events, disabling them: ${String(e)}\x1b[0m\n`,
-    );
+    Events.warn("Could not write BSM events, disabling them", e);
   }
 
   /**
@@ -338,6 +637,7 @@ export class Events {
 
     process.on("exit", (code) => {
       Events.closeAll(code);
+      Events.processLog?.close();
     });
   }
 
@@ -354,12 +654,24 @@ export class Events {
    * Just exists for testing purposes
    */
   static _reset(): void {
+    for (const log of Events.logs.values()) log.close();
+    Events.logs.clear();
+    Events.processLog?.close();
+    Events.processLog = undefined;
+    if (Events.originalWrites) {
+      process.stdout.write = Events.originalWrites.stdout;
+      process.stderr.write = Events.originalWrites.stderr;
+      Events.originalWrites = undefined;
+    }
+
     Events.dir = undefined;
     Events.file = undefined;
     Events.rootParent = undefined;
     Events.rootCwd = "";
+    Events.terminal = false;
     Events.open.clear();
     Events.occurrences.clear();
+    Events.packages.clear();
     Events.reported = new WeakSet();
     Events.lastPrimitive = [];
   }

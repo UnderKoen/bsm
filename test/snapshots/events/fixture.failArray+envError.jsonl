@@ -1,4 +1,4 @@
-{"v":1,"t":0,"type":"start","id":"3553263b","script":"failArray","kind":"array","cwd":"."}
+{"v":1,"t":0,"type":"start","id":"3553263b","script":"failArray","kind":"array","cwd":".","package":"@under_koen/bsm"}
 {"v":1,"t":0,"type":"start","id":"f559526e","parent":"3553263b","script":"failArray.0","kind":"string","cwd":"."}
 {"v":1,"t":0,"type":"spawn","id":"f559526e","cmd":"exit 3"}
 {"v":1,"t":0,"type":"end","id":"f559526e","code":3,"duration":0}
@@ -7,5 +7,5 @@
 {"v":1,"t":0,"type":"start","id":"5a270c60","parent":"3553263b","script":"failArray.2","kind":"object","cwd":"."}
 {"v":1,"t":0,"type":"skip","id":"5a270c60","reason":"not run: failArray.0 failed"}
 {"v":1,"t":0,"type":"end","id":"3553263b","code":3,"duration":0}
-{"v":1,"t":0,"type":"start","id":"2aa8ed72","script":"envError","cwd":"."}
+{"v":1,"t":0,"type":"start","id":"2aa8ed72","script":"envError","cwd":".","package":"@under_koen/bsm"}
 {"v":1,"t":0,"type":"skip","id":"2aa8ed72","reason":"not run: failArray.0 failed"}

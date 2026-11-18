@@ -68,7 +68,10 @@ class Executor {
     const parent = options.eventId;
     options.eventId = id;
     try {
-      await Executor.dispatch(context, script, path, options);
+      // bsm's own output while this runs belongs to this node
+      await Events.within(id, () =>
+        Executor.dispatch(context, script, path, options),
+      );
       Events.end(id, 0);
     } catch (e) {
       Events.fail(id, e);
@@ -222,14 +225,14 @@ class Executor {
 
     if (context === "") return;
 
-    Events.spawn(options.eventId, context);
+    const output = Events.spawn(options.eventId, context);
 
     // Escape ~ for unix shells
     context = context.replace(/bsm ~/g, "bsm \\~");
 
     await new Promise<void>((resolve, reject) => {
       const s = child_process.spawn(context, [], {
-        stdio: "inherit",
+        stdio: output.stdio,
         shell: true,
         env: {
           ...process.env,
@@ -239,6 +242,7 @@ class Executor {
           ...Events.childEnv(options.eventId),
         },
       });
+      output.attach(s);
 
       s.on("close", (code: number | null, signal?: NodeJS.Signals | null) => {
         if (code === 0) {

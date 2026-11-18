@@ -23,6 +23,8 @@ const argv = minimist(process.argv.slice(2), {
 process.argv = argv["--"] ?? [];
 
 export async function main() {
+  // Before anything prints, so all output (config errors, --debug) is logged
+  Events.setup();
   const cli = new Cli(argv);
 
   await cli.run();

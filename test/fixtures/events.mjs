@@ -18,6 +18,11 @@ export default {
       _default: "bsm ~.inner",
       inner: envError,
     },
+    // stdout and stderr end up in one log, in order (the delay keeps the two
+    // pipes from racing)
+    output: `node -e "console.log('out'); setTimeout(() => console.error('err'), 100)"`,
+    // Like `lerna run build`: a bsm per package, in parallel, one failing
+    parallel: "node ./test/fixtures/parallel.mjs",
     // Scripts after a failure that never get their turn
     failArray: ["exit 3", "echo b", { _default: "echo c" }],
     failStar: {

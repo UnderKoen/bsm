@@ -1,11 +1,11 @@
-{"v":1,"t":0,"type":"start","id":"acb7d72c","script":"testing","kind":"object","cwd":"."}
+{"v":1,"t":0,"type":"start","id":"acb7d72c","script":"testing","kind":"object","cwd":".","package":"@under_koen/bsm"}
 {"v":1,"t":0,"type":"start","id":"cb36f28f","parent":"acb7d72c","script":"testing.specificHooks","kind":"object","cwd":"."}
 {"v":1,"t":0,"type":"start","id":"bc0e5514","parent":"cb36f28f","script":"testing.specificHooks._pre__default","kind":"string","hook":"_pre","cwd":"."}
 {"v":1,"t":0,"type":"spawn","id":"bc0e5514","cmd":"echo pre default"}
 {"v":1,"t":0,"type":"end","id":"bc0e5514","code":0,"duration":0}
 {"v":1,"t":0,"type":"start","id":"fb17ef57","parent":"cb36f28f","script":"testing.specificHooks._default","kind":"string","cwd":"."}
 {"v":1,"t":0,"type":"spawn","id":"fb17ef57","cmd":"bsm ~.test"}
-{"v":1,"t":0,"type":"start","id":"c88a1790","parent":"fb17ef57","script":"testing.specificHooks","kind":"object","cwd":"."}
+{"v":1,"t":0,"type":"start","id":"c88a1790","parent":"fb17ef57","script":"testing.specificHooks","kind":"object","cwd":".","package":"@under_koen/bsm"}
 {"v":1,"t":0,"type":"start","id":"cbf29af1","parent":"c88a1790","script":"testing.specificHooks._pre_test","kind":"string","hook":"_pre","cwd":"."}
 {"v":1,"t":0,"type":"spawn","id":"cbf29af1","cmd":"echo pre test"}
 {"v":1,"t":0,"type":"end","id":"cbf29af1","code":0,"duration":0}
