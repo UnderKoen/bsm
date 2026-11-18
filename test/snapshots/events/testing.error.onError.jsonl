@@ -1,0 +1,17 @@
+{"v":1,"t":0,"type":"start","id":"acb7d72c","script":"testing","kind":"object","cwd":"."}
+{"v":1,"t":0,"type":"start","id":"b74394ba","parent":"acb7d72c","script":"testing.error","kind":"object","cwd":"."}
+{"v":1,"t":0,"type":"start","id":"af8d865e","parent":"b74394ba","script":"testing.error.onError","kind":"object","cwd":"."}
+{"v":1,"t":0,"type":"start","id":"e2d394a4","parent":"af8d865e","script":"testing.error.onError._default","kind":"string","cwd":"."}
+{"v":1,"t":0,"type":"spawn","id":"e2d394a4","cmd":"exit 4"}
+{"v":1,"t":0,"type":"end","id":"e2d394a4","code":4,"duration":0}
+{"v":1,"t":0,"type":"start","id":"5eaf072b","parent":"af8d865e","script":"testing.error.onError._onError","kind":"string","hook":"_onError","cwd":"."}
+{"v":1,"t":0,"type":"spawn","id":"5eaf072b","cmd":"echo onError"}
+{"v":1,"t":0,"type":"end","id":"5eaf072b","code":0,"duration":0}
+{"v":1,"t":0,"type":"end","id":"af8d865e","code":4,"duration":0}
+{"v":1,"t":0,"type":"start","id":"c5df6646","parent":"b74394ba","script":"testing.error._catch","kind":"function","hook":"_catch","cwd":"."}
+{"v":1,"t":0,"type":"start","id":"a0815369","parent":"c5df6646","script":"testing.error._catch","kind":"string","returned":true,"cwd":"."}
+{"v":1,"t":0,"type":"spawn","id":"a0815369","cmd":"echo 4"}
+{"v":1,"t":0,"type":"end","id":"a0815369","code":0,"duration":0}
+{"v":1,"t":0,"type":"end","id":"c5df6646","code":0,"duration":0}
+{"v":1,"t":0,"type":"end","id":"b74394ba","code":0,"duration":0}
+{"v":1,"t":0,"type":"end","id":"acb7d72c","code":0,"duration":0}

@@ -1,0 +1,24 @@
+{"v":1,"t":0,"type":"start","id":"acb7d72c","script":"testing","kind":"object","cwd":"."}
+{"v":1,"t":0,"type":"start","id":"cb36f28f","parent":"acb7d72c","script":"testing.specificHooks","kind":"object","cwd":"."}
+{"v":1,"t":0,"type":"start","id":"bc0e5514","parent":"cb36f28f","script":"testing.specificHooks._pre__default","kind":"string","hook":"_pre","cwd":"."}
+{"v":1,"t":0,"type":"spawn","id":"bc0e5514","cmd":"echo pre default"}
+{"v":1,"t":0,"type":"end","id":"bc0e5514","code":0,"duration":0}
+{"v":1,"t":0,"type":"start","id":"fb17ef57","parent":"cb36f28f","script":"testing.specificHooks._default","kind":"string","cwd":"."}
+{"v":1,"t":0,"type":"spawn","id":"fb17ef57","cmd":"bsm ~.test"}
+{"v":1,"t":0,"type":"start","id":"c88a1790","parent":"fb17ef57","script":"testing.specificHooks","kind":"object","cwd":"."}
+{"v":1,"t":0,"type":"start","id":"cbf29af1","parent":"c88a1790","script":"testing.specificHooks._pre_test","kind":"string","hook":"_pre","cwd":"."}
+{"v":1,"t":0,"type":"spawn","id":"cbf29af1","cmd":"echo pre test"}
+{"v":1,"t":0,"type":"end","id":"cbf29af1","code":0,"duration":0}
+{"v":1,"t":0,"type":"start","id":"5d16b5b5","parent":"c88a1790","script":"testing.specificHooks.test","kind":"string","cwd":"."}
+{"v":1,"t":0,"type":"spawn","id":"5d16b5b5","cmd":"echo test"}
+{"v":1,"t":0,"type":"end","id":"5d16b5b5","code":0,"duration":0}
+{"v":1,"t":0,"type":"start","id":"e5e3f94f","parent":"c88a1790","script":"testing.specificHooks._post_test","kind":"string","hook":"_post","cwd":"."}
+{"v":1,"t":0,"type":"spawn","id":"e5e3f94f","cmd":"echo for test"}
+{"v":1,"t":0,"type":"end","id":"e5e3f94f","code":0,"duration":0}
+{"v":1,"t":0,"type":"end","id":"c88a1790","code":0,"duration":0}
+{"v":1,"t":0,"type":"end","id":"fb17ef57","code":0,"duration":0}
+{"v":1,"t":0,"type":"start","id":"387df8ae","parent":"cb36f28f","script":"testing.specificHooks._post","kind":"string","hook":"_post","cwd":"."}
+{"v":1,"t":0,"type":"spawn","id":"387df8ae","cmd":"echo for all expect test"}
+{"v":1,"t":0,"type":"end","id":"387df8ae","code":0,"duration":0}
+{"v":1,"t":0,"type":"end","id":"cb36f28f","code":0,"duration":0}
+{"v":1,"t":0,"type":"end","id":"acb7d72c","code":0,"duration":0}

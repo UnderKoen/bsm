@@ -6,6 +6,7 @@ import { Executor } from "./Executor.js";
 import path from "path";
 import { Logger } from "./Logger.js";
 import { ConfigLoader } from "./ConfigLoader.js";
+import { Events } from "./Events.js";
 
 function values(t: TScripts | TScript[]): TScript[] {
   if (Array.isArray(t)) return t;
@@ -73,28 +74,38 @@ export class Cli {
 
     addToPath(process.env, getNpmBin());
 
-    for (let script of this.argv._) {
-      // On Windows, you can't escape the tilde, so we have to do it for the user
-      script = script.replace(/^\\~/g, "~");
-
-      // TODO: move this to Executor
-      if (script.startsWith("~") && process.env.BSM_PATH) {
-        const prefix = process.env.BSM_PATH.split(".");
-        const sub = getScript(this.config.scripts, prefix);
-
-        if (sub) {
-          await Executor.runScript(
-            sub,
-            script.split(".").splice(1),
-            prefix,
-            {},
-          );
-          continue;
-        }
+    // On Windows, you can't escape the tilde, so we have to do it for the user
+    const scripts = this.argv._.map((s) => s.replace(/^\\~/g, "~"));
+    for (let i = 0; i < scripts.length; i++) {
+      try {
+        await this.runCliScript(scripts[i]);
+      } catch (e) {
+        // `bsm lint test`: record that test never ran because lint failed
+        Events.notRun(
+          undefined,
+          scripts.slice(i + 1).map((script) => ({
+            script: script.replace(/^~/, process.env.BSM_PATH ?? "~"),
+          })),
+          e,
+        );
+        throw e;
       }
-
-      await Executor.run(script);
     }
+  }
+
+  async runCliScript(script: string): Promise<void> {
+    // TODO: move this to Executor
+    if (script.startsWith("~") && process.env.BSM_PATH) {
+      const prefix = process.env.BSM_PATH.split(".");
+      const sub = getScript(this.config.scripts, prefix);
+
+      if (sub) {
+        await Executor.runScript(sub, script.split(".").splice(1), prefix, {});
+        return;
+      }
+    }
+
+    await Executor.run(script);
   }
 
   handleDebug(): void | never {

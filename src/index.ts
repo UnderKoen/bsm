@@ -5,6 +5,7 @@ import minimist from "minimist";
 import { Cli } from "./Cli.js";
 import { BsmError, BsmFunctionError } from "./BsmError.js";
 import { Logger } from "./Logger.js";
+import { Events } from "./Events.js";
 
 const argv = minimist(process.argv.slice(2), {
   "--": true,
@@ -29,6 +30,9 @@ export async function main() {
 
 if (process.env.NODE_ENV !== "test")
   main().catch((c: unknown) => {
+    // Errors from scripts were reported on their node already
+    Events.report(undefined, c);
+
     if (c instanceof BsmFunctionError) {
       Logger.error(c.func);
       Logger.error(`\x1b[31mError executing function '${c.script}'\x1b[0m`);

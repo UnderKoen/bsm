@@ -51,6 +51,34 @@ export default {
       _default:
         "node --import tsx --import ./test/stack-filter.ts ./node_modules/uvu/bin.js test -i fixtures -i snapshots",
       cov: "c8 bsm ~ --",
+      // Runs the CI test job (ubuntu, `npm ci`, `npm run test:cov`) in Docker on
+      // the current working tree, uncommitted changes included.
+      // NODE_VERSION picks the image tag (default: lts, like CI's lts/* job).
+      docker: () => {
+        const image = `node:${process.env.NODE_VERSION ?? "lts"}`;
+        const steps = [
+          "set -e",
+          // Copy without host builds: node_modules has native binaries for the host OS
+          "mkdir /app",
+          "tar -C /src --exclude=./node_modules --exclude=./dist --exclude=./coverage -cf - . | tar -C /app -xf -",
+          "cd /app",
+          // Rewrite files with LF line endings, like a fresh checkout in CI
+          "git config core.autocrlf input",
+          "git add -A",
+          "git checkout-index -a -f",
+          "node --version",
+          "npm ci --no-audit --no-fund",
+          "npm run test:cov",
+        ];
+        return [
+          "docker run --rm",
+          `-v "${process.cwd()}:/src:ro"`,
+          // Reuse downloaded packages between runs
+          "-v bsm-npm-cache:/root/.npm",
+          image,
+          `bash -c "${steps.join("; ")}"`,
+        ].join(" ");
+      },
     },
     env: () => {
       console.log(process.env);

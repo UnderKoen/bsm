@@ -9,12 +9,26 @@ import { ConfigLoader } from "./ConfigLoader.js";
 import { Idempotency } from "./Idempotency.js";
 import { BsmError, BsmFunctionError } from "./BsmError.js";
 import { Logger } from "./Logger.js";
+import { Events, ScriptKind } from "./Events.js";
 
 export type Options = {
   excludeArgs?: true;
   ignoreNotFound?: true;
   env?: Record<string, string>;
+  /** Id of the run event node the next script runs under */
+  eventId?: string;
+  /** Set by executeHook so the event node is marked as a hook */
+  hook?: string;
+  /** Set by executeFunction so the event node is marked as returned by a function */
+  returned?: true;
 };
+
+function scriptKind(context: TScript): ScriptKind {
+  if (typeof context === "function") return "function";
+  if (typeof context === "string") return "string";
+  if (Array.isArray(context)) return "array";
+  return "object";
+}
 
 class Executor {
   //We test this with bin.ts
@@ -25,6 +39,47 @@ class Executor {
   }
 
   static async runScript(
+    context: TScript,
+    script: string[],
+    path: string[],
+    options: Options,
+  ): Promise<void> {
+    // Marks only apply to this script, not to the scripts it runs
+    const marks = { hook: options.hook, returned: options.returned };
+    delete options.hook;
+    delete options.returned;
+
+    // The root of the scripts tree is not a script of its own
+    const id =
+      path.length > 0
+        ? Events.start(
+            options.eventId,
+            path.join("."),
+            scriptKind(context),
+            marks,
+          )
+        : undefined;
+    if (id === undefined) {
+      await Executor.dispatch(context, script, path, options);
+      return;
+    }
+
+    // Options objects are shared with the caller, so restore the parent id afterwards
+    const parent = options.eventId;
+    options.eventId = id;
+    try {
+      await Executor.dispatch(context, script, path, options);
+      Events.end(id, 0);
+    } catch (e) {
+      Events.fail(id, e);
+      throw e;
+    } finally {
+      if (parent === undefined) delete options.eventId;
+      else options.eventId = parent;
+    }
+  }
+
+  static async dispatch(
     context: TScript,
     script: string[],
     path: string[],
@@ -58,15 +113,12 @@ class Executor {
       const sub = path[path.length - 1];
       const rest = path.slice(0, -1);
 
-      if (rest.length === 0) {
-        Logger.error(`\x1b[31mScript '${sub}' does not exist\x1b[0m`);
-      } else {
-        Logger.error(
-          `\x1b[31mScript '${rest.join(
-            ".",
-          )}' does not have a '${sub}' script\x1b[0m`,
-        );
-      }
+      Logger.fail(
+        rest.length === 0
+          ? `Script '${sub}' does not exist`
+          : `Script '${rest.join(".")}' does not have a '${sub}' script`,
+        { id: options.eventId },
+      );
 
       /* c8 ignore next 9 */
       if (ConfigLoader.config.config?.defaultHelpBehavior === "interactive") {
@@ -90,7 +142,9 @@ class Executor {
         Help.printCommands(context, rest, false);
       }
     } else {
-      Logger.error(`\x1b[31mScript '${path.join(".")}' not found\x1b[0m`);
+      Logger.fail(`Script '${path.join(".")}' not found`, {
+        id: options.eventId,
+      });
     }
     process.exit(127);
   }
@@ -113,6 +167,7 @@ class Executor {
       process.env = {
         ...process.env,
         ...options.env,
+        ...Events.childEnv(options.eventId),
       };
 
       result = (await context.call(null, process.argv)) as TScript | undefined;
@@ -137,6 +192,7 @@ class Executor {
     await Executor.runScript(result, script, path, {
       ...options,
       excludeArgs: true,
+      returned: true,
     });
   }
 
@@ -166,6 +222,8 @@ class Executor {
 
     if (context === "") return;
 
+    Events.spawn(options.eventId, context);
+
     // Escape ~ for unix shells
     context = context.replace(/bsm ~/g, "bsm \\~");
 
@@ -178,14 +236,15 @@ class Executor {
           ...options.env,
           BSM_PATH: path.slice(0, -1).join("."),
           BSM_SCRIPT: path.join("."),
+          ...Events.childEnv(options.eventId),
         },
       });
 
-      s.on("close", (code: number) => {
+      s.on("close", (code: number | null, signal?: NodeJS.Signals | null) => {
         if (code === 0) {
           resolve();
         } else {
-          reject(new BsmError(code, path.join(".")));
+          reject(BsmError.fromExit(code, signal ?? null, path.join(".")));
         }
       });
     });
@@ -198,17 +257,13 @@ class Executor {
     options: Options,
   ): Promise<void> {
     if (script.length === 0 || script[0] === "*") {
-      for (let i = 0; i < context.length; i++) {
-        await Executor.runScript(
-          context[i],
-          script.slice(1),
-          [...path, i.toString()],
-          {
-            ...options,
-            ignoreNotFound: script[0] === "*" ? true : options.ignoreNotFound,
-          },
-        );
-      }
+      await Executor.runInOrder(
+        context.map((c, i) => [i.toString(), c]),
+        script.slice(1),
+        path,
+        options,
+        script[0] === "*" ? true : options.ignoreNotFound,
+      );
     } else {
       const sub = script[0];
       const subscript = Executor.subscript(context, sub);
@@ -240,6 +295,7 @@ class Executor {
         options,
       );
       if (isSame) {
+        Events.skip(options.eventId, "idempotency hash is the same");
         Logger.log(
           `\x1b[90mNot running ${[...path, ...script].join(".")} because the idempotency hash is the same\x1b[0m`,
         );
@@ -265,6 +321,7 @@ class Executor {
     path: string[],
     options: Options,
   ): Promise<void> {
+    let postStarted = false;
     try {
       if (Object.hasOwn(context, "$env")) {
         options.env = {
@@ -292,21 +349,15 @@ class Executor {
       await Executor.executeHook(context, "_pre", script, path, options);
 
       if (script[0] === "*") {
-        for (const key in context) {
-          if (key.startsWith("_")) continue;
-          if (key.startsWith("$")) continue;
-          if (Object.hasOwn(context, key)) {
-            await Executor.runScript(
-              context[key],
-              script.slice(1),
-              [...path, key],
-              {
-                ...options,
-                ignoreNotFound: true,
-              },
-            );
-          }
-        }
+        await Executor.runInOrder(
+          Object.entries(context).filter(
+            ([key]) => !key.startsWith("_") && !key.startsWith("$"),
+          ),
+          script.slice(1),
+          path,
+          options,
+          true,
+        );
       } else {
         const sub = script[0];
         const subscript = Executor.subscript(context, sub);
@@ -324,12 +375,31 @@ class Executor {
         }
       }
 
+      postStarted = true;
       await Executor.executeHook(context, "_post", script, path, options);
 
       if (Idempotency.hasIdempotencyEnabled(context)) {
         Idempotency.saveIdempotency(context, [...path, ...script]);
       }
     } catch (e) {
+      // _post only runs after success
+      const post = postStarted
+        ? undefined
+        : Executor.findHook(context, "_post", script);
+      if (post) {
+        Events.notRun(
+          options.eventId,
+          [
+            {
+              script: [...path, post].join("."),
+              kind: scriptKind(context[post]),
+              marks: { hook: "_post" },
+            },
+          ],
+          e,
+        );
+      }
+
       if (e instanceof BsmError) {
         process.env.BSM_ERROR = e.code.toString();
       } else {
@@ -514,19 +584,61 @@ class Executor {
     path: string[],
     options: Options,
   ): Promise<boolean> {
-    const hookNames = Executor.getHookName(hook, script);
-    for (const hookName of hookNames) {
-      if (!Object.hasOwn(context, hookName)) continue;
+    const hookName = Executor.findHook(context, hook, script);
+    if (hookName === undefined) return false;
 
-      await Executor.runScript(context[hookName], [], [...path, hookName], {
-        ...options,
-        excludeArgs: true,
-      });
+    await Executor.runScript(context[hookName], [], [...path, hookName], {
+      ...options,
+      excludeArgs: true,
+      hook,
+    });
 
-      return true;
+    return true;
+  }
+
+  /**
+   * The hook that runs for `script`: the specific one (`_pre_test`) or the general one.
+   */
+  static findHook(
+    context: TScripts,
+    hook: string,
+    script: string[],
+  ): string | undefined {
+    return Executor.getHookName(hook, script).find((name) =>
+      Object.hasOwn(context, name),
+    );
+  }
+
+  /**
+   * Runs scripts one after the other. When one fails, the ones after it are
+   * recorded as not run before the error goes up.
+   */
+  static async runInOrder(
+    scripts: [string, TScript][],
+    script: string[],
+    path: string[],
+    options: Options,
+    ignoreNotFound: true | undefined,
+  ): Promise<void> {
+    for (let i = 0; i < scripts.length; i++) {
+      const [key, context] = scripts[i];
+      try {
+        await Executor.runScript(context, script, [...path, key], {
+          ...options,
+          ignoreNotFound,
+        });
+      } catch (e) {
+        Events.notRun(
+          options.eventId,
+          scripts.slice(i + 1).map(([key, context]) => ({
+            script: [...path, key].join("."),
+            kind: scriptKind(context),
+          })),
+          e,
+        );
+        throw e;
+      }
     }
-
-    return false;
   }
 
   /**

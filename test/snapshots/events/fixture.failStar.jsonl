@@ -1,0 +1,12 @@
+{"v":1,"t":0,"type":"start","id":"43bf41cb","script":"failStar","kind":"object","cwd":"."}
+{"v":1,"t":0,"type":"start","id":"cbe02e7e","parent":"43bf41cb","script":"failStar.a","kind":"string","cwd":"."}
+{"v":1,"t":0,"type":"spawn","id":"cbe02e7e","cmd":"exit 3"}
+{"v":1,"t":0,"type":"end","id":"cbe02e7e","code":3,"duration":0}
+{"v":1,"t":0,"type":"start","id":"9968bbdd","parent":"43bf41cb","script":"failStar.b","kind":"string","cwd":"."}
+{"v":1,"t":0,"type":"skip","id":"9968bbdd","reason":"not run: failStar.a failed"}
+{"v":1,"t":0,"type":"start","id":"888d57c5","parent":"43bf41cb","script":"failStar._post","kind":"string","hook":"_post","cwd":"."}
+{"v":1,"t":0,"type":"skip","id":"888d57c5","reason":"not run: failStar.a failed"}
+{"v":1,"t":0,"type":"start","id":"1b9303c1","parent":"43bf41cb","script":"failStar._finally","kind":"string","hook":"_finally","cwd":"."}
+{"v":1,"t":0,"type":"spawn","id":"1b9303c1","cmd":"echo finally"}
+{"v":1,"t":0,"type":"end","id":"1b9303c1","code":0,"duration":0}
+{"v":1,"t":0,"type":"end","id":"43bf41cb","code":3,"duration":0}

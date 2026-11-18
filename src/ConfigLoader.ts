@@ -54,7 +54,7 @@ export class ConfigLoader {
     } catch {
       if (noBail) return undefined;
 
-      Logger.error(`\x1b[31mCannot find config '${source}' to extend\x1b[0m`);
+      Logger.fail(`Cannot find config '${source}' to extend`);
       process.exit(1);
     }
 
@@ -74,7 +74,7 @@ export class ConfigLoader {
       Logger.error(e);
 
       if (Array.isArray(file)) file = file[0];
-      Logger.error(`\x1b[31mError loading config '${file}'\x1b[0m`);
+      Logger.fail(`Error loading config '${file}'`, { cause: e });
       process.exit(1);
     }
   }
@@ -98,10 +98,10 @@ export class ConfigLoader {
       return config;
     }
 
-    Logger.error(
-      `\x1b[31mCannot find config ${possibleConfigFiles
+    Logger.fail(
+      `Cannot find config ${possibleConfigFiles
         .map((s) => `'${s}'`)
-        .join(" or ")}\x1b[0m`,
+        .join(" or ")}`,
     );
     process.exit(1);
   }

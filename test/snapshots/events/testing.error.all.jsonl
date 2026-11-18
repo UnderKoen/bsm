@@ -1,0 +1,25 @@
+{"v":1,"t":0,"type":"start","id":"acb7d72c","script":"testing","kind":"object","cwd":"."}
+{"v":1,"t":0,"type":"start","id":"b74394ba","parent":"acb7d72c","script":"testing.error","kind":"object","cwd":"."}
+{"v":1,"t":0,"type":"start","id":"5e7ebed2","parent":"b74394ba","script":"testing.error.all","kind":"object","cwd":"."}
+{"v":1,"t":0,"type":"start","id":"943be196","parent":"5e7ebed2","script":"testing.error.all._default","kind":"string","cwd":"."}
+{"v":1,"t":0,"type":"spawn","id":"943be196","cmd":"exit 4"}
+{"v":1,"t":0,"type":"end","id":"943be196","code":4,"duration":0}
+{"v":1,"t":0,"type":"start","id":"a86967a0","parent":"5e7ebed2","script":"testing.error.all._post","kind":"string","hook":"_post","cwd":"."}
+{"v":1,"t":0,"type":"skip","id":"a86967a0","reason":"not run: testing.error.all._default failed"}
+{"v":1,"t":0,"type":"start","id":"44980eaa","parent":"5e7ebed2","script":"testing.error.all._onError","kind":"string","hook":"_onError","cwd":"."}
+{"v":1,"t":0,"type":"spawn","id":"44980eaa","cmd":"echo onError"}
+{"v":1,"t":0,"type":"end","id":"44980eaa","code":0,"duration":0}
+{"v":1,"t":0,"type":"start","id":"23a95f3a","parent":"5e7ebed2","script":"testing.error.all._catch","kind":"string","hook":"_catch","cwd":"."}
+{"v":1,"t":0,"type":"spawn","id":"23a95f3a","cmd":"exit 3"}
+{"v":1,"t":0,"type":"end","id":"23a95f3a","code":3,"duration":0}
+{"v":1,"t":0,"type":"start","id":"4c1495ff","parent":"5e7ebed2","script":"testing.error.all._finally","kind":"string","hook":"_finally","cwd":"."}
+{"v":1,"t":0,"type":"spawn","id":"4c1495ff","cmd":"echo finally"}
+{"v":1,"t":0,"type":"end","id":"4c1495ff","code":0,"duration":0}
+{"v":1,"t":0,"type":"end","id":"5e7ebed2","code":3,"duration":0}
+{"v":1,"t":0,"type":"start","id":"c5df6646","parent":"b74394ba","script":"testing.error._catch","kind":"function","hook":"_catch","cwd":"."}
+{"v":1,"t":0,"type":"start","id":"a0815369","parent":"c5df6646","script":"testing.error._catch","kind":"string","returned":true,"cwd":"."}
+{"v":1,"t":0,"type":"spawn","id":"a0815369","cmd":"echo 3"}
+{"v":1,"t":0,"type":"end","id":"a0815369","code":0,"duration":0}
+{"v":1,"t":0,"type":"end","id":"c5df6646","code":0,"duration":0}
+{"v":1,"t":0,"type":"end","id":"b74394ba","code":0,"duration":0}
+{"v":1,"t":0,"type":"end","id":"acb7d72c","code":0,"duration":0}

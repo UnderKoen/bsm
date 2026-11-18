@@ -1,0 +1,15 @@
+{"v":1,"t":0,"type":"start","id":"acb7d72c","script":"testing","kind":"object","cwd":"."}
+{"v":1,"t":0,"type":"start","id":"95c642ed","parent":"acb7d72c","script":"testing.debug","kind":"object","cwd":"."}
+{"v":1,"t":0,"type":"start","id":"65bea091","parent":"95c642ed","script":"testing.debug._default","kind":"string","cwd":"."}
+{"v":1,"t":0,"type":"spawn","id":"65bea091","cmd":"bsm ~.*"}
+{"v":1,"t":0,"type":"start","id":"8d0efc33","parent":"65bea091","script":"testing.debug","kind":"object","cwd":"."}
+{"v":1,"t":0,"type":"start","id":"cfe13e03","parent":"8d0efc33","script":"testing.debug.scripts","kind":"string","cwd":"."}
+{"v":1,"t":0,"type":"spawn","id":"cfe13e03","cmd":"bsm --debug scripts"}
+{"v":1,"t":0,"type":"end","id":"cfe13e03","code":0,"duration":0}
+{"v":1,"t":0,"type":"start","id":"6f78f50b","parent":"8d0efc33","script":"testing.debug.extends","kind":"string","cwd":"."}
+{"v":1,"t":0,"type":"spawn","id":"6f78f50b","cmd":"bsm --debug extends"}
+{"v":1,"t":0,"type":"end","id":"6f78f50b","code":0,"duration":0}
+{"v":1,"t":0,"type":"end","id":"8d0efc33","code":0,"duration":0}
+{"v":1,"t":0,"type":"end","id":"65bea091","code":0,"duration":0}
+{"v":1,"t":0,"type":"end","id":"95c642ed","code":0,"duration":0}
+{"v":1,"t":0,"type":"end","id":"acb7d72c","code":0,"duration":0}
